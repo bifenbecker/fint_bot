@@ -7,6 +7,7 @@ from aiogram.types import CallbackQuery as CQ
 from aiogram.types import Message as Mes
 
 from db.queries.admin_queries import add_new_card
+from enum_types import CardPositionType
 from filters.filters import IsAdmin
 from keyboards.admin_kbs import back_to_admin_btn
 from utils.const import rarities
@@ -28,8 +29,16 @@ async def add_card_cmd(c: CQ, state: FSM):
     4.Лига
     5.Редкость карточки
     6.Рейтинг карточки
+    7.Позиция
+	8.Атака
+	9.Защита
+	10.Общий рейтинг
 
     цифры указывать не надо
+    
+    Позиции:
+    <code>Вратарь</code>, <code>Защитник</code>, 
+    <code>Полузащитник</code>, <code>Нападающий</code>
 
     Список редкостей:
     <code>Common</code>, <code>Uncommon</code>, <code>Rare</code>, 
@@ -49,7 +58,7 @@ async def add_card_cmd(c: CQ, state: FSM):
 @router.message(StateFilter(AdminStates.add_card), F.text, flags=flags)
 async def add_new_card_cmd(m: Mes, state: FSM):
     data = m.text.split("\n")
-    if len(data) != 6:
+    if len(data) != 10:
         await state.clear()
         await m.answer(
             "Некорректный ввод данных, попробуйте снова", reply_markup=back_to_admin_btn
@@ -61,6 +70,10 @@ async def add_new_card_cmd(m: Mes, state: FSM):
         league = data[3]
         rarity = data[4]
         points = data[5]
+        position = data[6]
+        attack_rate = data[7]
+        defense_rate = data[8]
+        general_rate = data[9]
         print(rarity)
 
         if rarity not in rarities:
@@ -71,6 +84,30 @@ async def add_new_card_cmd(m: Mes, state: FSM):
         elif not points.isdigit():
             await m.answer(
                 "Некорректный ввод данных, попробуйте снова",
+                reply_markup=back_to_admin_btn,
+            )
+        elif position not in CardPositionType:
+            await m.answer(
+                "Такая позиция не найдена, попробуйте снова",
+                reply_markup=back_to_admin_btn,
+            )
+        elif (
+            not attack_rate.isdigit()
+            or not defense_rate.isdigit()
+            or not general_rate.isdigit()
+        ):
+            await m.answer(
+                "Атака, защита и общий рейтинг должны быть числами, попробуйте снова",
+                reply_markup=back_to_admin_btn,
+            )
+        elif int(attack_rate) < 0 or int(defense_rate) < 0 or int(general_rate) < 0:
+            await m.answer(
+                "Атака, защита и общий рейтинг не могут быть меньше нуля, попробуйте снова",
+                reply_markup=back_to_admin_btn,
+            )
+        elif int(attack_rate) + int(defense_rate) != int(general_rate):
+            await m.answer(
+                "Сумма атаки и защиты должна быть равна общему рейтингу, попробуйте снова",
                 reply_markup=back_to_admin_btn,
             )
         else:
@@ -85,6 +122,10 @@ async def add_new_card_cmd(m: Mes, state: FSM):
                 rarity=rarity,
                 points=int(points),
                 league=league,
+                position=position,
+                attack_rate=int(attack_rate),
+                defense_rate=int(defense_rate),
+                general_rate=int(general_rate),
             )
 
 
@@ -104,5 +145,9 @@ async def save_new_card_cmd(m: Mes, state: FSM, ssn):
     Рейтинг: <b>{data["points"]}</b>
     Редкость: <b>{data["rarity"]}</b>
     Команда: <b>{data["team"]}</b>
+    Позиция: <b>{data["position"]}</b>
+    Атака: <b>{data["attack_rate"]}</b>
+    Защита: <b>{data["defense_rate"]}</b>
+    Общий рейтинг: <b>{data["general_rate"]}</b>
     """
     await m.answer_photo(image, dedent(txt), reply_markup=back_to_admin_btn)

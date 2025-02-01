@@ -23,6 +23,10 @@ async def add_new_card(ssn: AsyncSession, data: dict, image):
             rarity=data["rarity"],
             points=data["points"],
             league=data["league"],
+            position=data["position"],
+            attack_rate=data["attack_rate"],
+            defense_rate=data["defense_rate"],
+            general_rate=data["general_rate"],
         )
     )
     await ssn.commit()
