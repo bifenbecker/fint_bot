@@ -7,15 +7,11 @@ from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
 
 from db.models import CardItem, Games
-from db.queries.games_queries import hit_casino, hit_darts
+from db.queries.games_queries import hit_casino
 from keyboards.cards_kbs import accept_new_card_btn
 from keyboards.games_kbs import buy_casino_kb, casino_kb, no_casino_kb
-from keyboards.pay_kbs import player_pick_kb
 from middlewares.actions import ActionMiddleware
-from utils.format_texts import (format_new_free_card_text,
-                                format_view_my_cards_text)
-from utils.misc import format_delay_text
-from utils.states import UserStates
+from utils.format_texts import format_new_free_card_text
 
 flags = {"throttling_key": "default"}
 router = Router()
@@ -53,7 +49,8 @@ async def hit_hitcasino_cmd(c: CQ, ssn, action_queue, bot, state: FSM):
             card: CardItem = res[1]
             txt = await format_new_free_card_text(card)
             await c.message.answer_photo(
-                card.image, txt, reply_markup=accept_new_card_btn)
+                card.image, txt, reply_markup=accept_new_card_btn
+            )
 
         else:
             game: Games = res[1]

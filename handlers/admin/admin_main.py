@@ -6,8 +6,12 @@ from aiogram.types import Message as Mes
 
 from db.queries.admin_queries import get_adm_user_info
 from filters.filters import IsAdmin
-from keyboards.admin_kbs import (admin_card_kb, admin_kb, admin_promos_kb,
-                                 back_to_admin_btn)
+from keyboards.admin_kbs import (
+    admin_card_kb,
+    admin_kb,
+    admin_promos_kb,
+    back_to_admin_btn,
+)
 from utils.format_texts import format_user_info_text
 from utils.states import AdminStates
 

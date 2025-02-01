@@ -4,10 +4,14 @@ from aiogram import Bot, F, Router
 from aiogram.types import CallbackQuery as CQ
 
 from db.models import PayItem
-from db.queries.payment_queries import (add_cards_pack, add_new_payment,
-                                        add_player_pick_pack, get_payment_info)
+from db.queries.payment_queries import (
+    add_cards_pack,
+    add_new_payment,
+    add_player_pick_pack,
+    get_payment_info,
+)
 from keyboards.cb_data import PayCB
-from keyboards.pay_kbs import cards_pack_btn, pay_kb, to_packs_kb
+from keyboards.pay_kbs import pay_kb, to_packs_kb
 from middlewares.actions import ActionMiddleware
 from utils.pay_actions import check_bill_for_pay, create_new_bill
 
@@ -45,19 +49,24 @@ async def buy_ls_cmd(c: CQ, wallet, ssn, action_queue):
         k = "pick"
         amount = 100
 
-    pay_res = await create_new_bill(
-        amount, c.from_user.id, kind, wallet)
+    pay_res = await create_new_bill(amount, c.from_user.id, kind, wallet)
     pay_id = await add_new_payment(
-        ssn, c.from_user.id, pay_res[0], pay_res[1], kind, amount)
+        ssn, c.from_user.id, pay_res[0], pay_res[1], kind, amount
+    )
     logging.info(
-        f"User {c.from_user.id} created new bill {pay_id} label {pay_res[0]} kind {k}")
+        f"User {c.from_user.id} created new bill {pay_id} label {pay_res[0]} kind {k}"
+    )
 
     txt = "Ваш заказ сформирован\nОплатите его по кнопке ниже"
     await c.message.edit_text(txt, reply_markup=pay_kb(pay_id, pay_res[1], k))
 
 
-@router.callback_query(PayCB.filter((F.act == "paid") & (F.kind == "pick")), flags=flags)
-async def paid_pick_cardpack_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token, action_queue, bot: Bot):
+@router.callback_query(
+    PayCB.filter((F.act == "paid") & (F.kind == "pick")), flags=flags
+)
+async def paid_pick_cardpack_cmd(
+    c: CQ, callback_data: PayCB, ssn, yoo_token, action_queue, bot: Bot
+):
     pay_id = int(callback_data.pay_id)
     pay: PayItem = await get_payment_info(ssn, pay_id)
     result = await check_bill_for_pay(pay.label, yoo_token)
@@ -66,7 +75,8 @@ async def paid_pick_cardpack_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token, ac
         await bot.send_chat_action(c.from_user.id, "typing")
         await add_player_pick_pack(ssn, c.from_user.id, pay_id)
         logging.info(
-            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}")
+            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}"
+        )
         txt = "✅ Оплата прошла успешно!!\nПак начислен на твой баланс!"
         await c.message.edit_text(txt, reply_markup=to_packs_kb)
     else:
@@ -79,11 +89,14 @@ async def paid_pick_cardpack_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token, ac
 
 
 @router.callback_query(
-    PayCB.filter((F.act == "paid") & (F.kind.in_(
-        {"cards5", "cards10", "cards20", "cards30"}))),
-    flags=flags
+    PayCB.filter(
+        (F.act == "paid") & (F.kind.in_({"cards5", "cards10", "cards20", "cards30"}))
+    ),
+    flags=flags,
 )
-async def paid_cardpack_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token, action_queue, bot: Bot):
+async def paid_cardpack_cmd(
+    c: CQ, callback_data: PayCB, ssn, yoo_token, action_queue, bot: Bot
+):
     pay_id = int(callback_data.pay_id)
     pay: PayItem = await get_payment_info(ssn, pay_id)
     result = await check_bill_for_pay(pay.label, yoo_token)
@@ -96,7 +109,8 @@ async def paid_cardpack_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token, action_
         await add_cards_pack(ssn, c.from_user.id, quant, pay_id)
 
         logging.info(
-            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}")
+            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}"
+        )
         txt = "✅ Оплата прошла успешно!!\nПак начислен на твой баланс!"
         await c.message.edit_text(txt, reply_markup=to_packs_kb)
     else:

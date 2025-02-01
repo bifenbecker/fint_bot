@@ -4,7 +4,6 @@ from textwrap import dedent
 
 from aiogram import F, Router
 from aiogram.types import CallbackQuery as CQ
-from aiogram.types.input_file import FSInputFile
 
 from db.models import CardItem, Player
 from db.queries.games_queries import lucky_shot
@@ -84,13 +83,14 @@ async def hit_lucky_shot_cmd(c: CQ, ssn, action_queue, bot):
                 txt = f"☘️ Ты испытал удачу и сейчас тебе не повезло😔\n Количество оставшихся попыток - {user.lucky_quants}"
                 await c.message.answer(txt, reply_markup=lucky_shot_btn)
             else:
-                txt = f"☘️ Ты испытал удачу и сейчас тебе не повезло😔\nПопробуй еще раз через 6 часов или получи 3 удара за 125 рублей!"
+                txt = "☘️ Ты испытал удачу и сейчас тебе не повезло😔\nПопробуй еще раз через 6 часов или получи 3 удара за 125 рублей!"
                 await c.message.answer(txt, reply_markup=no_free_ls_btn)
         else:
             txt = "☘️ Ты испытал удачу и выиграл одну случайную карточку!\n\n"
             card_txt = await format_new_free_card_text(card)
             await c.message.answer_photo(
-                card.image, txt + card_txt, reply_markup=accept_new_card_btn)
+                card.image, txt + card_txt, reply_markup=accept_new_card_btn
+            )
 
     try:
         del action_queue[str(c.from_user.id)]

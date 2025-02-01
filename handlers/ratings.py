@@ -1,14 +1,19 @@
 from aiogram import F, Router
 from aiogram.types import CallbackQuery as CQ
 
-from db.queries.global_queries import (get_all_time_penalty,
-                                       get_all_time_rating, get_top_penalty,
-                                       get_top_rating)
+from db.queries.global_queries import (
+    get_all_time_penalty,
+    get_all_time_rating,
+    get_top_penalty,
+    get_top_rating,
+)
 from keyboards.ratings_kbs import back_to_ratings_btn, ratings_kb
-from utils.format_texts import (format_all_time_penalty_text,
-                                format_all_time_rating_text,
-                                format_top_penalty_text,
-                                format_top_rating_text)
+from utils.format_texts import (
+    format_all_time_penalty_text,
+    format_all_time_rating_text,
+    format_top_penalty_text,
+    format_top_rating_text,
+)
 
 flags = {"throttling_key": "default"}
 router = Router()

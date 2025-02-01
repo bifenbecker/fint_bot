@@ -6,8 +6,12 @@ from aiogram import F, Router
 from aiogram.types import CallbackQuery as CQ
 
 from db.models import PayItem
-from db.queries.payment_queries import (add_ls_after_pay, add_new_payment,
-                                        cancel_payment, get_payment_info)
+from db.queries.payment_queries import (
+    add_ls_after_pay,
+    add_new_payment,
+    cancel_payment,
+    get_payment_info,
+)
 from keyboards.cb_data import PayCB
 from keyboards.games_kbs import lucky_shot_btn
 from keyboards.main_kbs import main_kb
@@ -55,17 +59,24 @@ async def buy_ls_cmd(c: CQ, wallet, ssn):
         price = 350
 
     pay_res = await create_new_bill(
-        price, c.from_user.id, f"{quant} Lucky Shots", wallet)
+        price, c.from_user.id, f"{quant} Lucky Shots", wallet
+    )
     pay_id = await add_new_payment(
-        ssn, c.from_user.id, pay_res[0], pay_res[1], f"{quant} Lucky Shots", price)
+        ssn, c.from_user.id, pay_res[0], pay_res[1], f"{quant} Lucky Shots", price
+    )
     logging.info(
-        f"User {c.from_user.id} created new bill {pay_id} label {pay_res[0]} kind ls{quant}")
+        f"User {c.from_user.id} created new bill {pay_id} label {pay_res[0]} kind ls{quant}"
+    )
 
     txt = "Ваш заказ сформирован\nОплатите его по кнопке ниже"
-    await c.message.edit_text(txt, reply_markup=pay_kb(pay_id, pay_res[1], f"ls{quant}"))
+    await c.message.edit_text(
+        txt, reply_markup=pay_kb(pay_id, pay_res[1], f"ls{quant}")
+    )
 
 
-@router.callback_query(PayCB.filter((F.act == "paid") & (F.kind.startswith("ls"))), flags=flags)
+@router.callback_query(
+    PayCB.filter((F.act == "paid") & (F.kind.startswith("ls"))), flags=flags
+)
 async def paid_ls_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token):
     pay_id = int(callback_data.pay_id)
     kind = callback_data.kind
@@ -77,7 +88,8 @@ async def paid_ls_cmd(c: CQ, callback_data: PayCB, ssn, yoo_token):
     if result == "found":
         await add_ls_after_pay(ssn, c.from_user.id, pay_id, quant)
         logging.info(
-            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}")
+            f"User {c.from_user.id} payd bill {pay_id} label {pay.label} kind {pay.kind}"
+        )
         txt = "Успешно ✅!\nКупленные удары уже начисленны вам, время проверить удачу!"
         await c.message.edit_text(txt, reply_markup=lucky_shot_btn)
     else:

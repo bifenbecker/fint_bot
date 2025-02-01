@@ -6,8 +6,11 @@ from textwrap import dedent
 from aiogram import Bot
 
 from db.models import PackBattle
-from db.queries.pack_battle_qs import (check_pack_battle, get_active_battles,
-                                       update_owner_battle_msg_id_db)
+from db.queries.pack_battle_qs import (
+    check_pack_battle,
+    get_active_battles,
+    update_owner_battle_msg_id_db,
+)
 from keyboards.main_kbs import to_main_btn
 from keyboards.packs_kb import no_opp_battle_kb, pack_battle_kb
 from keyboards.pay_kbs import cards_pack_btn
@@ -48,16 +51,34 @@ async def re_check_active_battles(db, bot):
                 delay = battle.owner_ts - date_ts
                 if delay <= 0:
                     delay = num + 1
-                asyncio.create_task(check_battle_timer(
-                    db, bot, battle.id, "owner", battle.owner, battle.owner_ts, delay))
+                asyncio.create_task(
+                    check_battle_timer(
+                        db,
+                        bot,
+                        battle.id,
+                        "owner",
+                        battle.owner,
+                        battle.owner_ts,
+                        delay,
+                    )
+                )
             elif battle.target_ts > 0:
                 delay = battle.target_ts - date_ts
                 if delay <= 0:
                     delay = num + 1
-                asyncio.create_task(check_battle_timer(
-                    db, bot, battle.id, "target", battle.target, battle.target_ts, delay))
+                asyncio.create_task(
+                    check_battle_timer(
+                        db,
+                        bot,
+                        battle.id,
+                        "target",
+                        battle.target,
+                        battle.target_ts,
+                        delay,
+                    )
+                )
 
-            await asyncio.sleep(.001)
+            await asyncio.sleep(0.001)
 
 
 async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, delay):
@@ -76,7 +97,7 @@ async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, de
             except Exception as error:
                 logging.error(f"Delete error | chat {battle.target}\n{error}")
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
 
             txt = f"""
             🎪 Текущее лобби удалено
@@ -85,11 +106,15 @@ async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, de
             """
 
             try:
-                await bot.send_message(battle.owner, dedent(txt), reply_markup=pack_battle_kb)
+                await bot.send_message(
+                    battle.owner, dedent(txt), reply_markup=pack_battle_kb
+                )
             except Exception as error:
                 logging.error(f"Send error | chat {battle.owner}\n{error}")
             try:
-                await bot.send_message(battle.target, dedent(txt), reply_markup=pack_battle_kb)
+                await bot.send_message(
+                    battle.target, dedent(txt), reply_markup=pack_battle_kb
+                )
             except Exception as error:
                 logging.error(f"Send error | chat {battle.target}\n{error}")
         elif res[1] == "target_timeout":
@@ -102,7 +127,7 @@ async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, de
             except Exception as error:
                 logging.error(f"Delete error | chat {battle.target}\n{error}")
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
 
             txt = f"🟠 {res[4]} долго бездействовал и был удален из лобби"
             try:
@@ -110,7 +135,7 @@ async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, de
             except Exception as error:
                 logging.error(f"Send error | chat {battle.owner}\n{error}")
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
 
             duel_txt = f"""
             🎪 Ваше лобби:
@@ -122,7 +147,10 @@ async def check_battle_timer(db, bot: Bot, battle_id, kind, user_id, date_ts, de
             """
             try:
                 msg = await bot.send_message(
-                    battle.owner, dedent(duel_txt), reply_markup=no_opp_battle_kb(battle_id))
+                    battle.owner,
+                    dedent(duel_txt),
+                    reply_markup=no_opp_battle_kb(battle_id),
+                )
                 await update_owner_battle_msg_id_db(db, battle_id, msg.message_id)
             except Exception as error:
                 logging.error(f"Send error | chat {battle.owner}\n{error}")
@@ -138,7 +166,7 @@ async def send_battle_finish_messages(battle: PackBattle, bot: Bot, pack_one, pa
     except Exception as error:
         logging.error(f"Delete error | chat {battle.target}\n{error}")
 
-    await asyncio.sleep(.01)
+    await asyncio.sleep(0.01)
 
     if battle.winner == 0:
         txt = f"""
@@ -177,50 +205,52 @@ async def send_battle_finish_messages(battle: PackBattle, bot: Bot, pack_one, pa
         except Exception as error:
             logging.error(f"Send error | chat {battle.target}\n{error}")
 
-        await asyncio.sleep(.2)
+        await asyncio.sleep(0.2)
 
     owner_pack_txt = f"🟣 Пак {battle.owner_username}"
     target_pack_txt = f"🟠 Пак {battle.target_username}"
 
     try:
         await bot.send_message(
-            battle.owner, owner_pack_txt, reply_markup=cards_pack_btn(pack_one))
+            battle.owner, owner_pack_txt, reply_markup=cards_pack_btn(pack_one)
+        )
     except Exception as error:
         logging.error(f"Send error | chat {battle.owner}\n{error}")
 
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
 
     try:
         await bot.send_message(
-            battle.target, owner_pack_txt, reply_markup=cards_pack_btn(pack_one))
+            battle.target, owner_pack_txt, reply_markup=cards_pack_btn(pack_one)
+        )
     except Exception as error:
         logging.error(f"Send error | chat {battle.owner}\n{error}")
 
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
 
     try:
         await bot.send_message(
-            battle.owner, target_pack_txt, reply_markup=cards_pack_btn(pack_two))
+            battle.owner, target_pack_txt, reply_markup=cards_pack_btn(pack_two)
+        )
     except Exception as error:
         logging.error(f"Send error | chat {battle.target}\n{error}")
 
-    await asyncio.sleep(.1)
+    await asyncio.sleep(0.1)
 
     try:
         await bot.send_message(
-            battle.target, target_pack_txt, reply_markup=cards_pack_btn(pack_two))
+            battle.target, target_pack_txt, reply_markup=cards_pack_btn(pack_two)
+        )
     except Exception as error:
         logging.error(f"Send error | chat {battle.target}\n{error}")
 
-    await asyncio.sleep(.2)
+    await asyncio.sleep(0.2)
 
     try:
-        await bot.send_message(
-            battle.owner, dedent(txt), reply_markup=to_main_btn)
+        await bot.send_message(battle.owner, dedent(txt), reply_markup=to_main_btn)
     except Exception as error:
         logging.error(f"Send error | chat {battle.owner}\n{error}")
     try:
-        await bot.send_message(
-            battle.target, dedent(txt), reply_markup=to_main_btn)
+        await bot.send_message(battle.target, dedent(txt), reply_markup=to_main_btn)
     except Exception as error:
         logging.error(f"Send error | chat {battle.target}\n{error}")

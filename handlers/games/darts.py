@@ -6,14 +6,12 @@ from aiogram import F, Router
 from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
 
-from db.models import CardItem, Games
+from db.models import Games
 from db.queries.games_queries import hit_darts
 from keyboards.games_kbs import darts_kb, no_free_darts_kb
-from keyboards.pay_kbs import cards_pack_btn, player_pick_kb
+from keyboards.pay_kbs import cards_pack_btn
 from middlewares.actions import ActionMiddleware
-from utils.format_texts import format_view_my_cards_text
 from utils.misc import format_delay_text
-from utils.states import UserStates
 
 flags = {"throttling_key": "default"}
 router = Router()

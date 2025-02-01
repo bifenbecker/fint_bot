@@ -8,20 +8,28 @@ from aiogram.types import CallbackQuery as CQ
 
 from db.models import Player
 from db.queries.card_queries import get_user_card_rarities
-from db.queries.collection_queries import (get_pack_cards, get_user_card_teams,
-                                           get_user_collection_cards,
-                                           get_user_list_cards,
-                                           get_user_team_cards,
-                                           re_count_duplicates)
+from db.queries.collection_queries import (
+    get_pack_cards,
+    get_user_card_teams,
+    get_user_collection_cards,
+    get_user_list_cards,
+    get_user_team_cards,
+    re_count_duplicates,
+)
 from db.queries.global_queries import update_user_info
-from keyboards.cards_kbs import (filter_my_cards_kb, my_card_list_kb,
-                                 my_card_rarities_kb, my_card_teams_kb,
-                                 my_cards_kb, my_collection_kb,
-                                 my_team_cards_kb, pack_cards_kb)
+from keyboards.cards_kbs import (
+    filter_my_cards_kb,
+    my_card_list_kb,
+    my_card_rarities_kb,
+    my_card_teams_kb,
+    my_cards_kb,
+    my_collection_kb,
+    my_team_cards_kb,
+    pack_cards_kb,
+)
 from keyboards.cb_data import PageCB
 from utils.const import images
-from utils.format_texts import (format_list_my_cards_text,
-                                format_view_my_cards_text)
+from utils.format_texts import format_list_my_cards_text, format_view_my_cards_text
 from utils.misc import calc_cards_quant
 from utils.states import UserStates
 
@@ -46,9 +54,7 @@ async def my_collection_cmd(c: CQ, ssn):
     """
     img = images.get("myclub")
     await c.message.answer_photo(
-        photo=types.FSInputFile(img),
-        caption=dedent(txt),
-        reply_markup=my_collection_kb
+        photo=types.FSInputFile(img), caption=dedent(txt), reply_markup=my_collection_kb
     )
 
 
@@ -56,7 +62,7 @@ async def my_collection_cmd(c: CQ, ssn):
 # async def my_collection_cmd(c: CQ):
 #     img = images.get("myclub")
 #     await c.message.edit_reply_markup(reply_markup=my_collection_kb)
-    # await c.message.edit_media(reply_markup=my_collection_kb, media=img)
+# await c.message.edit_media(reply_markup=my_collection_kb, media=img)
 
 
 @router.callback_query(F.data == "mycards", flags=flags)
@@ -78,9 +84,7 @@ async def card_collection_rarities_cmd(c: CQ, state: FSM):
     await c.message.answer(txt, reply_markup=filter_my_cards_kb)
 
 
-@router.callback_query(
-    F.data.startswith("rarity_"), flags={"throttling_key": "pages"}
-)
+@router.callback_query(F.data.startswith("rarity_"), flags={"throttling_key": "pages"})
 async def view_rarity_cards_cmd(c: CQ, ssn, state: FSM):
     rarity = c.data.split("_")[-1]
     cards = await get_user_collection_cards(ssn, c.from_user.id, rarity, "nosort")
@@ -101,16 +105,15 @@ async def view_rarity_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=my_cards_kb(page, last, "nosort"))
+            cards[0].card.image, txt, reply_markup=my_cards_kb(page, last, "nosort")
+        )
 
         await state.set_state(UserStates.mycards)
         await state.update_data(cards=cards, sorting="nosort")
 
 
 @router.callback_query(
-    StateFilter(UserStates.mycards),
-    PageCB.filter(), flags={"throttling_key": "pages"}
+    StateFilter(UserStates.mycards), PageCB.filter(), flags={"throttling_key": "pages"}
 )
 async def paginate_rarity_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     page = int(callback_data.num)
@@ -120,14 +123,15 @@ async def paginate_rarity_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     cards = data.get("cards")
     sorting = data.get("sorting")
 
-    card = cards[page-1]
+    card = cards[page - 1]
     txt = await format_view_my_cards_text(card.card)
 
     media = types.InputMediaPhoto(caption=txt, media=card.card.image)
 
     try:
         await c.message.edit_media(
-            media=media, reply_markup=my_cards_kb(page, last, sorting))
+            media=media, reply_markup=my_cards_kb(page, last, sorting)
+        )
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -158,8 +162,8 @@ async def view_sorted_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=my_cards_kb(page, last, sorting))
+            cards[0].card.image, txt, reply_markup=my_cards_kb(page, last, sorting)
+        )
 
         await state.set_state(UserStates.mycards)
         await state.update_data(cards=cards, sorting=sorting)
@@ -198,8 +202,8 @@ async def view_pack_cards_cmd(c: CQ, ssn, state: FSM):
 
     txt = await format_view_my_cards_text(cards[0].card)
     await c.message.answer_photo(
-        cards[0].card.image, txt,
-        reply_markup=pack_cards_kb(page, last))
+        cards[0].card.image, txt, reply_markup=pack_cards_kb(page, last)
+    )
 
     await state.set_state(UserStates.pack_cards)
     await state.update_data(cards=cards)
@@ -207,7 +211,8 @@ async def view_pack_cards_cmd(c: CQ, ssn, state: FSM):
 
 @router.callback_query(
     StateFilter(UserStates.pack_cards),
-    PageCB.filter(), flags={"throttling_key": "pages"}
+    PageCB.filter(),
+    flags={"throttling_key": "pages"},
 )
 async def paginate_pack_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     page = int(callback_data.num)
@@ -216,14 +221,13 @@ async def paginate_pack_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     data = await state.get_data()
     cards = data.get("cards")
 
-    card = cards[page-1]
+    card = cards[page - 1]
     txt = await format_view_my_cards_text(card.card)
 
     media = types.InputMediaPhoto(caption=txt, media=card.card.image)
 
     try:
-        await c.message.edit_media(
-            media=media, reply_markup=pack_cards_kb(page, last))
+        await c.message.edit_media(media=media, reply_markup=pack_cards_kb(page, last))
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -246,9 +250,7 @@ async def rarity_cards_cmd(c: CQ, ssn):
     await c.message.edit_text(txt, reply_markup=my_card_teams_kb(teams))
 
 
-@router.callback_query(
-    F.data.startswith("cteam_"), flags={"throttling_key": "pages"}
-)
+@router.callback_query(F.data.startswith("cteam_"), flags={"throttling_key": "pages"})
 async def view_team_cards_cmd(c: CQ, ssn, state: FSM):
     team = c.data.split("_")[-1]
     cards = await get_user_team_cards(ssn, c.from_user.id, team, "nosort")
@@ -266,8 +268,10 @@ async def view_team_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=my_team_cards_kb(page, last, "nosort", team))
+            cards[0].card.image,
+            txt,
+            reply_markup=my_team_cards_kb(page, last, "nosort", team),
+        )
 
         await state.set_state(UserStates.myteamcards)
         await state.update_data(cards=cards, sorting="nosort", team=team)
@@ -275,7 +279,8 @@ async def view_team_cards_cmd(c: CQ, ssn, state: FSM):
 
 @router.callback_query(
     StateFilter(UserStates.myteamcards),
-    PageCB.filter(), flags={"throttling_key": "pages"}
+    PageCB.filter(),
+    flags={"throttling_key": "pages"},
 )
 async def paginate_team_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     page = int(callback_data.num)
@@ -286,14 +291,15 @@ async def paginate_team_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     sorting = data.get("sorting")
     team = data.get("team")
 
-    card = cards[page-1]
+    card = cards[page - 1]
     txt = await format_view_my_cards_text(card.card)
 
     media = types.InputMediaPhoto(caption=txt, media=card.card.image)
 
     try:
         await c.message.edit_media(
-            media=media, reply_markup=my_team_cards_kb(page, last, sorting, team))
+            media=media, reply_markup=my_team_cards_kb(page, last, sorting, team)
+        )
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -326,8 +332,10 @@ async def view_sorted_team_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=my_team_cards_kb(page, last, sorting, team))
+            cards[0].card.image,
+            txt,
+            reply_markup=my_team_cards_kb(page, last, sorting, team),
+        )
 
         await state.set_state(UserStates.myteamcards)
         await state.update_data(cards=cards, sorting=sorting)

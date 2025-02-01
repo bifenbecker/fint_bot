@@ -1,23 +1,18 @@
-import datetime
 import logging
-from textwrap import dedent
 
-from aiogram import Bot, F, Router, types
+from aiogram import F, Router, types
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
-from aiogram.types import Message as Mes
 
 from db.models import CardItem
 from db.queries.global_queries import get_or_add_userpacks
-from db.queries.packs_qs import (open_default_pack, open_player_pick,
-                                 save_player_pick)
+from db.queries.packs_qs import open_default_pack, open_player_pick, save_player_pick
 from keyboards.cards_kbs import accept_new_card_btn
 from keyboards.cb_data import PageCB
 from keyboards.main_kbs import user_packs_kb
 from keyboards.pay_kbs import cards_pack_btn, player_pick_kb
-from utils.format_texts import (format_view_my_cards_text,
-                                format_view_my_packs_text)
+from utils.format_texts import format_view_my_cards_text, format_view_my_packs_text
 from utils.states import UserStates
 
 flags = {"throttling_key": "default"}
@@ -95,8 +90,8 @@ async def open_player_pick_cmd(c: CQ, ssn, state: FSM):
         txt = await format_view_my_cards_text(card)
 
         await c.message.answer_photo(
-            card.image,
-            txt, reply_markup=player_pick_kb(page, last, res[0], card.id))
+            card.image, txt, reply_markup=player_pick_kb(page, last, res[0], card.id)
+        )
         await state.set_state(UserStates.player_pick)
         await state.update_data(pick_id=res[0], cards=res[1])
 
@@ -109,15 +104,15 @@ async def paginate_player_pick(c: CQ, state: FSM, callback_data: PageCB):
     data = await state.get_data()
     pick_id = data.get("pick_id")
     cards = data.get("cards")
-    card: CardItem = cards[page-1]
+    card: CardItem = cards[page - 1]
 
     txt = await format_view_my_cards_text(card)
     media = types.InputMediaPhoto(caption=txt, media=card.image)
 
     try:
         await c.message.edit_media(
-            media=media,
-            reply_markup=player_pick_kb(page, last, pick_id, card.id))
+            media=media, reply_markup=player_pick_kb(page, last, pick_id, card.id)
+        )
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -134,8 +129,7 @@ async def player_pick_done(c: CQ, state: FSM, ssn):
 
     res = await save_player_pick(ssn, c.from_user.id, pick_id, card_id)
     if res == "not_active":
-        await c.answer(
-            "Вы уже выбрали карту из этого выбора игрока", show_alert=True)
+        await c.answer("Вы уже выбрали карту из этого выбора игрока", show_alert=True)
         try:
             await c.message.delete()
         except:

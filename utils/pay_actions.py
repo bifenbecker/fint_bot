@@ -1,5 +1,4 @@
 import datetime as dt
-import logging
 
 import aiohttp
 
@@ -28,14 +27,14 @@ async def create_new_bill(amount, user_id, kind, wallet):
     async with aiohttp.ClientSession() as session:
         resp = await session.post(url, data=payload)
         pay_url = str(resp.url)
-    
+
     return [label, pay_url]
 
 
 async def check_bill_for_pay(label, token):
     headers = {
-        'Authorization': 'Bearer ' + str(token),
-        'Content-Type': 'application/x-www-form-urlencoded'
+        "Authorization": "Bearer " + str(token),
+        "Content-Type": "application/x-www-form-urlencoded",
     }
     payload = {"label": label}
     url = "https://yoomoney.ru/api/operation-history?records=1"

@@ -1,5 +1,4 @@
 import logging
-from textwrap import dedent
 
 from aiogram import Bot, F, Router, types
 from aiogram.filters import StateFilter
@@ -7,27 +6,31 @@ from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
 from aiogram.types import Message as Mes
 
-from db.models import CardItem, Trade
-from db.queries.multi_trade_qs import (create_new_mtrade,
-                                       get_owner_selected_cards,
-                                       get_user_rarity_cards_m)
+from db.queries.multi_trade_qs import (
+    create_new_mtrade,
+    get_owner_selected_cards,
+    get_user_rarity_cards_m,
+)
 from db.queries.trade_queries import get_trade_card_rarities
 from keyboards.cb_data import PageCB
 from keyboards.main_kbs import to_main_btn
-from keyboards.trade_kbs import (card_mtrade_kb, m_offer_to_target_kb,
-                                 m_trade_rarities_kb)
-from utils.format_texts import (format_multi_trade_offer_text,
-                                format_owner_trade_cards_text,
-                                format_view_my_cards_text)
+from keyboards.trade_kbs import (
+    card_mtrade_kb,
+    m_offer_to_target_kb,
+    m_trade_rarities_kb,
+)
+from utils.format_texts import (
+    format_multi_trade_offer_text,
+    format_owner_trade_cards_text,
+    format_view_my_cards_text,
+)
 from utils.states import MultiTrade
 
 flags = {"throttling_key": "default"}
 router = Router()
 
 
-@router.callback_query(
-    F.data.startswith("trdqnt_"), flags={"throttling_key": "pages"}
-)
+@router.callback_query(F.data.startswith("trdqnt_"), flags={"throttling_key": "pages"})
 async def trade_multi_cmd(c: CQ, ssn, state: FSM):
     quant = int(c.data.split("_")[-1])
 
@@ -42,29 +45,32 @@ async def trade_multi_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=card_mtrade_kb(
-                page, last, "nosort", "not_in", "all"))
+            cards[0].card.image,
+            txt,
+            reply_markup=card_mtrade_kb(page, last, "nosort", "not_in", "all"),
+        )
 
         await state.set_state(MultiTrade.owner_cards)
         await state.update_data(
-            cards=cards, sorting="nosort", quant=quant, selected=[], rarity="all")
+            cards=cards, sorting="nosort", quant=quant, selected=[], rarity="all"
+        )
 
 
 @router.callback_query(
-    StateFilter(MultiTrade.owner_cards),
-    F.data == "mtrdrarities", flags=flags
+    StateFilter(MultiTrade.owner_cards), F.data == "mtrdrarities", flags=flags
 )
 async def mtrade_rarities_cmd(c: CQ, ssn):
     rarities = await get_trade_card_rarities(ssn, c.from_user.id)
     await c.message.delete()
     await c.message.answer(
-        "Выбери редкость карт", reply_markup=m_trade_rarities_kb(rarities))
+        "Выбери редкость карт", reply_markup=m_trade_rarities_kb(rarities)
+    )
 
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    F.data.startswith("mtrdrar_"), flags={"throttling_key": "pages"}
+    F.data.startswith("mtrdrar_"),
+    flags={"throttling_key": "pages"},
 )
 async def view_owner_mtrade_rarity_cards_cmd(c: CQ, ssn, state: FSM):
     c_data = c.data.split("_")
@@ -91,9 +97,10 @@ async def view_owner_mtrade_rarity_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=card_mtrade_kb(
-                page, last, "nosort", status, rarity))
+            cards[0].card.image,
+            txt,
+            reply_markup=card_mtrade_kb(page, last, "nosort", status, rarity),
+        )
 
         await state.set_state(MultiTrade.owner_cards)
         await state.update_data(cards=cards, sorting="nosort", rarity=rarity)
@@ -101,7 +108,8 @@ async def view_owner_mtrade_rarity_cards_cmd(c: CQ, ssn, state: FSM):
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    F.data.startswith("sortmtrd_"), flags={"throttling_key": "pages"}
+    F.data.startswith("sortmtrd_"),
+    flags={"throttling_key": "pages"},
 )
 async def view_mtrade_sorted_cards_cmd(c: CQ, ssn, state: FSM):
     c_data = c.data.split("_")[-1]
@@ -131,15 +139,18 @@ async def view_mtrade_sorted_cards_cmd(c: CQ, ssn, state: FSM):
 
         txt = await format_view_my_cards_text(cards[0].card)
         await c.message.answer_photo(
-            cards[0].card.image, txt,
-            reply_markup=card_mtrade_kb(page, last, sorting, status, "all"))
+            cards[0].card.image,
+            txt,
+            reply_markup=card_mtrade_kb(page, last, sorting, status, "all"),
+        )
 
         await state.update_data(cards=cards, sorting=sorting, rarity="all")
 
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    PageCB.filter(), flags={"throttling_key": "pages"}
+    PageCB.filter(),
+    flags={"throttling_key": "pages"},
 )
 async def paginate_owner_mtrade_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     page = int(callback_data.num)
@@ -151,7 +162,7 @@ async def paginate_owner_mtrade_cards_cmd(c: CQ, state: FSM, callback_data: Page
     selected = data.get("selected")
     rarity = data.get("rarity")
 
-    card = cards[page-1]
+    card = cards[page - 1]
 
     if card.id in selected:
         status = "in"
@@ -164,8 +175,9 @@ async def paginate_owner_mtrade_cards_cmd(c: CQ, state: FSM, callback_data: Page
 
     try:
         await c.message.edit_media(
-            media=media, reply_markup=card_mtrade_kb(
-                page, last, sorting, status, rarity))
+            media=media,
+            reply_markup=card_mtrade_kb(page, last, sorting, status, rarity),
+        )
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -173,7 +185,8 @@ async def paginate_owner_mtrade_cards_cmd(c: CQ, state: FSM, callback_data: Page
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    F.data.startswith("trdselecexcard_"), flags={"throttling_key": "pages"}
+    F.data.startswith("trdselecexcard_"),
+    flags={"throttling_key": "pages"},
 )
 async def select_mtrade_card_cmd(c: CQ, state: FSM):
     page = int(c.data.split("_")[-1])
@@ -185,7 +198,7 @@ async def select_mtrade_card_cmd(c: CQ, state: FSM):
     rarity = data.get("rarity")
     sorting = data.get("sorting")
 
-    card = cards[page-1]
+    card = cards[page - 1]
     if card.id not in selected:
         if len(selected) >= quant:
             await c.answer(f"Нельзя выбрать больше {quant} карт")
@@ -202,14 +215,16 @@ async def select_mtrade_card_cmd(c: CQ, state: FSM):
         status = "not_in"
     try:
         await c.message.edit_reply_markup(
-            reply_markup=card_mtrade_kb(page, len(cards), sorting, status, rarity))
+            reply_markup=card_mtrade_kb(page, len(cards), sorting, status, rarity)
+        )
     except Exception as error:
         logging.error(f"{error}")
 
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    F.data.startswith("trdunselecexcard_"), flags={"throttling_key": "pages"}
+    F.data.startswith("trdunselecexcard_"),
+    flags={"throttling_key": "pages"},
 )
 async def unselect_mtrade_card_cmd(c: CQ, state: FSM):
     page = int(c.data.split("_")[-1])
@@ -220,7 +235,7 @@ async def unselect_mtrade_card_cmd(c: CQ, state: FSM):
     rarity = data.get("rarity")
     sorting = data.get("sorting")
 
-    card = cards[page-1]
+    card = cards[page - 1]
     if card.id in selected:
         selected.remove(card.id)
     else:
@@ -234,14 +249,16 @@ async def unselect_mtrade_card_cmd(c: CQ, state: FSM):
         status = "not_in"
     try:
         await c.message.edit_reply_markup(
-            reply_markup=card_mtrade_kb(page, len(cards), sorting, status, rarity))
+            reply_markup=card_mtrade_kb(page, len(cards), sorting, status, rarity)
+        )
     except Exception as error:
         logging.error(f"{error}")
 
 
 @router.callback_query(
     StateFilter(MultiTrade.owner_cards),
-    F.data == "sendmtradeoffer", flags={"throttling_key": "pages"}
+    F.data == "sendmtradeoffer",
+    flags={"throttling_key": "pages"},
 )
 async def mtrade_cards_selected_cmd(c: CQ, state: FSM, ssn):
     data = await state.get_data()
@@ -276,12 +293,13 @@ async def save_target_mtrade_username_cmd(m: Mes, state: FSM, ssn, bot: Bot):
         username = m.from_user.mention_html()
 
     res = await create_new_mtrade(
-        ssn, m.from_user.id, username, data['selected'], target, quant)
+        ssn, m.from_user.id, username, data["selected"], target, quant
+    )
     if res == "no_card":
         await m.answer(
-            "⚠️ Возникла ошибка при создании обмена",
-            reply_markup=to_main_btn)
-    elif res == "not_access": 
+            "⚠️ Возникла ошибка при создании обмена", reply_markup=to_main_btn
+        )
+    elif res == "not_access":
         txt = "Этому пользователю запрещено проводить обмен"
         await m.answer(txt, reply_markup=to_main_btn)
     elif res == "not_found":
@@ -298,12 +316,13 @@ async def save_target_mtrade_username_cmd(m: Mes, state: FSM, ssn, bot: Bot):
         target_id = res[1]
 
         logging.info(
-            f"User {m.from_user.id} created new multi trade {quant}x{quant} #{trade_id} to {target_id} ({target})")
+            f"User {m.from_user.id} created new multi trade {quant}x{quant} #{trade_id} to {target_id} ({target})"
+        )
 
         txt = f"✅ Предложение обмена успешно отправлено пользователю - {target}"
         await m.answer(txt)
 
         target_txt = await format_multi_trade_offer_text(username, res[2], quant)
         await bot.send_message(
-            target_id, text=target_txt,
-            reply_markup=m_offer_to_target_kb(trade_id))
+            target_id, text=target_txt, reply_markup=m_offer_to_target_kb(trade_id)
+        )

@@ -1,10 +1,11 @@
 from logging.config import fileConfig
-
-from sqlalchemy import pool
-from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
-from alembic import context
 from os import getenv
+
 from dotenv import load_dotenv
+from sqlalchemy import pool
+from sqlalchemy.ext.asyncio import create_async_engine
+
+from alembic import context
 
 # Импорты моделей и баз
 from db.base import Base
@@ -21,7 +22,8 @@ if config.config_file_name is not None:
 
 # Указываем метаданные для автогенерации
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", getenv('DB_URL'))
+config.set_main_option("sqlalchemy.url", getenv("DB_URL"))
+
 
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode."""
@@ -36,10 +38,13 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+
 async def run_migrations_online() -> None:
     """Run migrations in 'online' mode."""
     connectable = create_async_engine(
-        config.get_main_option("sqlalchemy.url"),  # Используем async URL для асинхронного движка
+        config.get_main_option(
+            "sqlalchemy.url"
+        ),  # Используем async URL для асинхронного движка
         poolclass=pool.NullPool,
     )
 
@@ -49,18 +54,18 @@ async def run_migrations_online() -> None:
 
     await connectable.dispose()  # Закрытие движка после миграций
 
+
 def do_run_migrations(connection):
     """Выполнение миграций в синхронном контексте."""
-    context.configure(
-        connection=connection,
-        target_metadata=target_metadata
-    )
+    context.configure(connection=connection, target_metadata=target_metadata)
 
     with context.begin_transaction():
         context.run_migrations()
+
 
 if context.is_offline_mode():
     run_migrations_offline()
 else:
     import asyncio
+
     asyncio.run(run_migrations_online())

@@ -1,0 +1,11 @@
+{
+  "configurations": [
+    {
+      "name": "Python Debugger: Run Bot",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "__main__.py",
+      "console": "integratedTerminal"
+    }
+  ]
+}

@@ -52,8 +52,8 @@ async def add_new_card_cmd(m: Mes, state: FSM):
     if len(data) != 6:
         await state.clear()
         await m.answer(
-            "Некорректный ввод данных, попробуйте снова",
-            reply_markup=back_to_admin_btn)
+            "Некорректный ввод данных, попробуйте снова", reply_markup=back_to_admin_btn
+        )
     else:
         name = data[0]
         card_name = data[1]
@@ -66,19 +66,26 @@ async def add_new_card_cmd(m: Mes, state: FSM):
         if rarity not in rarities:
             await m.answer(
                 "Такая редкость не найдена, попробуйте снова",
-                reply_markup=back_to_admin_btn)
+                reply_markup=back_to_admin_btn,
+            )
         elif not points.isdigit():
             await m.answer(
                 "Некорректный ввод данных, попробуйте снова",
-                reply_markup=back_to_admin_btn)
+                reply_markup=back_to_admin_btn,
+            )
         else:
             await m.answer(
-                "Теперь отправьте фото карточки игрока",
-                reply_markup=back_to_admin_btn)
+                "Теперь отправьте фото карточки игрока", reply_markup=back_to_admin_btn
+            )
             await state.set_state(AdminStates.card_image)
             await state.update_data(
-                name=name, card_name=card_name, team=team,
-                rarity=rarity, points=int(points), league=league)
+                name=name,
+                card_name=card_name,
+                team=team,
+                rarity=rarity,
+                points=int(points),
+                league=league,
+            )
 
 
 @router.message(StateFilter(AdminStates.card_image), F.photo, flags=flags)
@@ -91,12 +98,11 @@ async def save_new_card_cmd(m: Mes, state: FSM, ssn):
     txt = f"""
     Новая карточка добавлена!
 
-    {data['name']}
-    {data['card_name']}
-    Лига: <b>{data['league']}</b>
-    Рейтинг: <b>{data['points']}</b>
-    Редкость: <b>{data['rarity']}</b>
-    Команда: <b>{data['team']}</b>
+    {data["name"]}
+    {data["card_name"]}
+    Лига: <b>{data["league"]}</b>
+    Рейтинг: <b>{data["points"]}</b>
+    Редкость: <b>{data["rarity"]}</b>
+    Команда: <b>{data["team"]}</b>
     """
-    await m.answer_photo(
-        image, dedent(txt), reply_markup=back_to_admin_btn)
+    await m.answer_photo(image, dedent(txt), reply_markup=back_to_admin_btn)

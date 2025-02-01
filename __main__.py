@@ -5,7 +5,6 @@ from logging.handlers import TimedRotatingFileHandler
 
 from aiogram import Bot, Dispatcher, F
 from aiogram.client.default import DefaultBotProperties
-from aiogram.types import BotCommand, BotCommandScopeAllPrivateChats
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from apscheduler.triggers.cron import CronTrigger
 from cachetools import TTLCache
@@ -13,30 +12,44 @@ from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
 
 from config_reader import config
 from db.base import Base
-from db.queries.scheduled_queries import get_banned_users, get_all_trade_for_information
+from db.queries.scheduled_queries import get_all_trade_for_information, get_banned_users
 from handlers import packs, ratings, start
-from handlers.admin import (add_card, add_promo, admin_main, edit_cards,
-                            user_restrict)
+from handlers.admin import add_card, add_promo, admin_main, edit_cards, user_restrict
 from handlers.card import buy_cards, get_card, my_cards
-from handlers.games import (casino, darts, lucky_shot, penalty,
-                            penalty_card_owner, penalty_card_target)
-from handlers.games.packs_battle import (pack_battle_create, pack_battle_main,
-                                         pack_battle_target)
-from handlers.payments import (cards_buy, casino_buy, darts_buy, fintpass,
-                               ls_buy)
-from handlers.trade import (confirm_trade, multi_owner_trade,
-                            multi_target_trade, owner_trade, target_trade)
+from handlers.games import (
+    casino,
+    darts,
+    lucky_shot,
+    penalty,
+    penalty_card_owner,
+    penalty_card_target,
+)
+from handlers.games.packs_battle import (
+    pack_battle_create,
+    pack_battle_main,
+    pack_battle_target,
+)
+from handlers.payments import cards_buy, casino_buy, darts_buy, fintpass, ls_buy
+from handlers.trade import (
+    confirm_trade,
+    multi_owner_trade,
+    multi_target_trade,
+    owner_trade,
+    target_trade,
+)
 from middlewares.db import DbSessionMiddleware
-from middlewares.maintnc import (MntcCallbackQueryMiddleware,
-                                 MntcMessageMiddleware)
-from middlewares.online import (OnlineCallbackQueryMiddleware,
-                                OnlineMessageMiddleware)
-from middlewares.throttling import (ThrottlingCallbackQueryMiddleware,
-                                    ThrottlingMessageMiddleware)
+from middlewares.online import OnlineCallbackQueryMiddleware, OnlineMessageMiddleware
+from middlewares.throttling import (
+    ThrottlingCallbackQueryMiddleware,
+    ThrottlingMessageMiddleware,
+)
 from utils.duel_misc import re_check_active_battles
-from utils.scheduled import (check_premiums, get_free_card_and_ls_notify,
-                             re_check_active_penalties, reset_player_trade_count)
-
+from utils.scheduled import (
+    check_premiums,
+    get_free_card_and_ls_notify,
+    re_check_active_penalties,
+    reset_player_trade_count,
+)
 
 # async def set_bot_commands(bot: Bot):
 #     commands = [
@@ -51,16 +64,25 @@ async def main():
 
     # Логгирование
     logging.basicConfig(
-        handlers=[TimedRotatingFileHandler(
-            f"logs/fint-{date.day}-{date.month}-{date.year}-{date.hour}-{date.minute}.log", when="d", interval=1)],
+        handlers=[
+            TimedRotatingFileHandler(
+                f"logs/fint-{date.day}-{date.month}-{date.year}-{date.hour}-{date.minute}.log",
+                when="d",
+                interval=1,
+            )
+        ],
         level=logging.INFO,
         format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
-        datefmt="%d.%m.%Y %H:%M:%S"
+        datefmt="%d.%m.%Y %H:%M:%S",
     )
 
     engine = create_async_engine(
-        url=config.db_url.unicode_string(), echo=False,
-        pool_size=500, max_overflow=500, pool_timeout=5)
+        url=config.db_url.unicode_string(),
+        echo=False,
+        pool_size=500,
+        max_overflow=500,
+        pool_timeout=5,
+    )
 
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -69,7 +91,7 @@ async def main():
 
     bot = Bot(
         token=config.bot_token.get_secret_value(),
-        default=DefaultBotProperties(parse_mode="HTML")
+        default=DefaultBotProperties(parse_mode="HTML"),
     )
     dp = Dispatcher()
 
@@ -77,16 +99,24 @@ async def main():
     dp.callback_query.filter(F.message.chat.type == "private")
 
     sheduler = AsyncIOScheduler()
-    sheduler.add_job(check_premiums, "cron", second="*/30",
-                     args=(sessionmaker, bot))
-    sheduler.add_job(reset_player_trade_count, trigger=CronTrigger(hour=00, minute=00, timezone="Europe/Moscow"),
-                     args=(sessionmaker, bot))
-    sheduler.add_job(get_free_card_and_ls_notify, "cron", minute="*/5",
-                     second="25", args=(sessionmaker, bot))
+    sheduler.add_job(check_premiums, "cron", second="*/30", args=(sessionmaker, bot))
+    sheduler.add_job(
+        reset_player_trade_count,
+        trigger=CronTrigger(hour=00, minute=00, timezone="Europe/Moscow"),
+        args=(sessionmaker, bot),
+    )
+    sheduler.add_job(
+        get_free_card_and_ls_notify,
+        "cron",
+        minute="*/5",
+        second="25",
+        args=(sessionmaker, bot),
+    )
     sheduler.add_job(
         get_all_trade_for_information,
-        trigger=CronTrigger(day_of_week='thu', hour='00', minute='30'),
-        args=(sessionmaker, bot))
+        trigger=CronTrigger(day_of_week="thu", hour="00", minute="30"),
+        args=(sessionmaker, bot),
+    )
     sheduler.start()
 
     # Регистрация роутеров с хэндлерами
@@ -144,18 +174,22 @@ async def main():
     action_queue = TTLCache(maxsize=10000, ttl=60)
     online = TTLCache(maxsize=10000, ttl=60)
 
-    logging.getLogger('aiogram.event').setLevel(logging.WARNING)
-    logging.getLogger('apscheduler.executors.default').setLevel(
-        logging.WARNING)
+    logging.getLogger("aiogram.event").setLevel(logging.WARNING)
+    logging.getLogger("apscheduler.executors.default").setLevel(logging.WARNING)
     try:
         await re_check_active_penalties(sessionmaker, bot)
         await re_check_active_battles(sessionmaker, bot)
         await bot.delete_webhook(drop_pending_updates=True)
         await dp.start_polling(
-            bot, db=sessionmaker, yoo_token=config.yoo_token.get_secret_value(),
+            bot,
+            db=sessionmaker,
+            yoo_token=config.yoo_token.get_secret_value(),
             allowed_updates=dp.resolve_used_update_types(),
-            wallet=config.wallet, action_queue=action_queue,
-            online=online, banned=banned)
+            wallet=config.wallet,
+            action_queue=action_queue,
+            online=online,
+            banned=banned,
+        )
     finally:
         await dp.storage.close()
         await bot.session.close()

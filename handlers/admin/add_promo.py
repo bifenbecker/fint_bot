@@ -8,13 +8,17 @@ from aiogram.types import CallbackQuery as CQ
 from aiogram.types import Message as Mes
 
 from db.queries.admin_queries import add_new_promo, delete_promo, get_promos
-from db.queries.collection_queries import (get_promo_rarity_cards,
-                                           get_rarity_cards)
+from db.queries.collection_queries import get_promo_rarity_cards, get_rarity_cards
 from filters.filters import IsAdmin
-from keyboards.admin_kbs import (adm_view_cards_kb, admin_kb,
-                                 back_to_admin_btn, promo_cards_kb, promo_kb,
-                                 promo_kind_kb, promo_rarities_kb,
-                                 promo_users_kb, view_promos_kb)
+from keyboards.admin_kbs import (
+    admin_kb,
+    back_to_admin_btn,
+    promo_cards_kb,
+    promo_kind_kb,
+    promo_rarities_kb,
+    promo_users_kb,
+    view_promos_kb,
+)
 from keyboards.cb_data import PageCB
 from utils.format_texts import format_view_my_cards_text
 from utils.states import AdminStates
@@ -32,9 +36,7 @@ async def add_promo_cmd(c: CQ, state: FSM):
     await state.set_state(AdminStates.promo_users)
 
 
-@router.callback_query(
-    F.data.startswith("prmusers_"), IsAdmin(), flags=flags
-)
+@router.callback_query(F.data.startswith("prmusers_"), IsAdmin(), flags=flags)
 async def choose_promo_pack_cmd(c: CQ, state: FSM):
     users = c.data.split("_")[-1]
 
@@ -44,9 +46,7 @@ async def choose_promo_pack_cmd(c: CQ, state: FSM):
     await state.update_data(users=users)
 
 
-@router.callback_query(
-    F.data.startswith("prmkind_random_"), IsAdmin(), flags=flags
-)
+@router.callback_query(F.data.startswith("prmkind_random_"), IsAdmin(), flags=flags)
 async def choose_promo_pack_cmd(c: CQ, state: FSM):
     quant = int(c.data.split("_")[-1])
     if quant == 1:
@@ -65,9 +65,7 @@ async def choose_promo_pack_cmd(c: CQ, state: FSM):
     await state.update_data(card_id=card_id, kind=kind)
 
 
-@router.callback_query(
-    F.data == "promokind_finpass", IsAdmin(), flags=flags
-)
+@router.callback_query(F.data == "promokind_finpass", IsAdmin(), flags=flags)
 async def choose_promo_pack_cmd(c: CQ, state: FSM):
     kind = "pass"
 
@@ -116,8 +114,7 @@ async def save_promo_text_cmd(m: Mes, state: FSM, ssn):
 
 
 @router.callback_query(
-    F.data.startswith("promorarity_"), IsAdmin(),
-    flags={"throttling_key": "pages"}
+    F.data.startswith("promorarity_"), IsAdmin(), flags={"throttling_key": "pages"}
 )
 async def choose_promo_card_cmd(c: CQ, state: FSM, ssn):
     rarity = c.data.split("_")[-1]
@@ -130,12 +127,13 @@ async def choose_promo_card_cmd(c: CQ, state: FSM, ssn):
 
     txt = await format_view_my_cards_text(cards[0])
     await c.message.answer_photo(
-        cards[0].image, txt,
-        reply_markup=promo_cards_kb(page, last, cards[0].id, "nosort", rarity))
+        cards[0].image,
+        txt,
+        reply_markup=promo_cards_kb(page, last, cards[0].id, "nosort", rarity),
+    )
 
     await state.set_state(AdminStates.promo_cards)
-    await state.update_data(
-        cards=cards, sorting="nosort", rarity=rarity)
+    await state.update_data(cards=cards, sorting="nosort", rarity=rarity)
 
 
 @router.callback_query(
@@ -160,9 +158,10 @@ async def view_sorted_promo_cards_cmd(c: CQ, ssn, state: FSM):
 
     txt = await format_view_my_cards_text(cards[0])
     await c.message.answer_photo(
-        cards[0].image, txt,
-        reply_markup=promo_cards_kb(
-            page, last, cards[0].id, sorting, rarity))
+        cards[0].image,
+        txt,
+        reply_markup=promo_cards_kb(page, last, cards[0].id, sorting, rarity),
+    )
 
     await state.set_state(AdminStates.promo_cards)
     await state.update_data(cards=cards, sorting=sorting, rarity=rarity)
@@ -170,7 +169,8 @@ async def view_sorted_promo_cards_cmd(c: CQ, ssn, state: FSM):
 
 @router.callback_query(
     StateFilter(AdminStates.promo_cards),
-    PageCB.filter(), flags={"throttling_key": "pages"}
+    PageCB.filter(),
+    flags={"throttling_key": "pages"},
 )
 async def paginate_promo_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
     page = int(callback_data.num)
@@ -188,8 +188,9 @@ async def paginate_promo_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
 
     try:
         await c.message.edit_media(
-            media=media, reply_markup=promo_cards_kb(
-                page, last, card.id, sorting, rarity))
+            media=media,
+            reply_markup=promo_cards_kb(page, last, card.id, sorting, rarity),
+        )
     except Exception as error:
         logging.error(f"Edit error\n{error}")
         await c.answer()
@@ -197,7 +198,9 @@ async def paginate_promo_cards_cmd(c: CQ, state: FSM, callback_data: PageCB):
 
 @router.callback_query(
     StateFilter(AdminStates.promo_cards),
-    F.data == "changepromorarity", IsAdmin(), flags=flags
+    F.data == "changepromorarity",
+    IsAdmin(),
+    flags=flags,
 )
 async def change_promo_rarity_cmd(c: CQ):
     await c.message.delete()
@@ -207,7 +210,9 @@ async def change_promo_rarity_cmd(c: CQ):
 
 @router.callback_query(
     StateFilter(AdminStates.promo_cards),
-    F.data.startswith("prmcard_"), IsAdmin(), flags=flags
+    F.data.startswith("prmcard_"),
+    IsAdmin(),
+    flags=flags,
 )
 async def save_new_promo_cmd(c: CQ, state: FSM, ssn):
     card_id = int(c.data.split("_")[-1])
@@ -234,9 +239,7 @@ async def view_promos_cmd(c: CQ, ssn):
     await c.message.edit_text(dedent(txt), reply_markup=view_promos_kb(promos))
 
 
-@router.callback_query(
-    F.data.startswith("delpromo_"), IsAdmin(), flags=flags
-)
+@router.callback_query(F.data.startswith("delpromo_"), IsAdmin(), flags=flags)
 async def delete_promo_cmd(c: CQ, ssn):
     promo_id = int(c.data.split("_")[-1])
 
@@ -244,6 +247,3 @@ async def delete_promo_cmd(c: CQ, ssn):
 
     await c.answer("Промокод удален", show_alert=True)
     await c.message.edit_reply_markup(reply_markup=view_promos_kb(promos))
-
-
-

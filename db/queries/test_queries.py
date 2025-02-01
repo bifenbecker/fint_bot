@@ -1,13 +1,7 @@
-import asyncio
-import datetime as dt
-import logging
-import random
-
-from sqlalchemy import delete, or_, select, update
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 
-from db.models import CardItem, CardPack, CardXPack, PayItem, Player, UserCard
+from db.models import Player
 
 
 async def redb(db, quant):
@@ -25,7 +19,7 @@ async def redb(db, quant):
             "4": "ЛЕГЕНДАРНАЯ",
             "5": "РЕДКАЯ",
             "6": "ЭКСКЛЮЗИВНАЯ",
-            "7": "МИФИЧЕСКАЯ"
+            "7": "МИФИЧЕСКАЯ",
         }
 
         # old_card: Card
@@ -116,10 +110,14 @@ async def update_new_rating(db):
 
     ssn: AsyncSession
     async with db() as ssn:
-        await ssn.execute(update(Player).values(
-            prev_season_rating=Player.rating,
-            prev_season_penalty=Player.penalty_rating,
-            season_rating=0, season_penalty=0))
+        await ssn.execute(
+            update(Player).values(
+                prev_season_rating=Player.rating,
+                prev_season_penalty=Player.penalty_rating,
+                season_rating=0,
+                season_penalty=0,
+            )
+        )
         await ssn.commit()
 
     #     data = file_data.split("\n")
@@ -147,10 +145,10 @@ async def update_new_rating(db):
     #                 prev_season_penalty=int(items[2])))
     #     await ssn.commit()
 
-        # await ssn.execute(update(Player).filter(
-        #     Player.season_rating == 0).values(season_rating=Player.rating))
-        # await ssn.commit()
+    # await ssn.execute(update(Player).filter(
+    #     Player.season_rating == 0).values(season_rating=Player.rating))
+    # await ssn.commit()
 
-        # await ssn.execute(update(Player).filter(
-        #     Player.season_penalty == 0).values(season_penalty=Player.penalty_rating))
-        # await ssn.commit()
+    # await ssn.execute(update(Player).filter(
+    #     Player.season_penalty == 0).values(season_penalty=Player.penalty_rating))
+    # await ssn.commit()

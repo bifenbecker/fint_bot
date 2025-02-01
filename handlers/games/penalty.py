@@ -9,22 +9,36 @@ from aiogram.types import CallbackQuery as CQ
 from aiogram.types import Message as Mes
 
 from db.models import Penalty, Player
-from db.queries.penalty_queries import (cancel_pen_queue, cancel_penalty,
-                                        check_for_active_penalty,
-                                        create_new_penalty, find_penalty_opp,
-                                        get_user_penalty_info, keeper_action,
-                                        kicker_action, penalty_switch,
-                                        start_penalty, get_penalty_access_user)
-from keyboards.games_kbs import (after_penalty_kb, cancel_penalty_queue_btn,
-                                 draw_penalty_kb, games_kb, penalty_kind_kb,
-                                 penalty_opp_kb, to_games_btn)
+from db.queries.penalty_queries import (
+    cancel_pen_queue,
+    cancel_penalty,
+    check_for_active_penalty,
+    create_new_penalty,
+    find_penalty_opp,
+    get_penalty_access_user,
+    get_user_penalty_info,
+    keeper_action,
+    kicker_action,
+    penalty_switch,
+    start_penalty,
+)
+from keyboards.games_kbs import (
+    after_penalty_kb,
+    cancel_penalty_queue_btn,
+    draw_penalty_kb,
+    games_kb,
+    penalty_kind_kb,
+    penalty_opp_kb,
+    to_games_btn,
+)
 from keyboards.main_kbs import to_main_btn
 from middlewares.actions import ActionMiddleware
-from utils.format_texts import (format_penalty_final_result_text,
-                                format_penalty_round_result_text)
+from utils.format_texts import (
+    format_penalty_final_result_text,
+    format_penalty_round_result_text,
+)
 from utils.scheduled import check_penalty_timer
 from utils.states import UserStates
-from sqlalchemy import select
 
 flags = {"throttling_key": "default"}
 router = Router()
@@ -151,13 +165,15 @@ async def save_target_penalty_username_cmd(m: Mes, state: FSM, ssn, bot: Bot, db
         txt = f"Ты не можешь сыграть в пенальти с {target} из-за большой разницы в рейтинге☹️"
         await m.answer(txt, reply_markup=to_main_btn)
     elif res == "rating_diff":
-        txt = f"Этому пользователю нельзя предложить игру в Пенальти ☹️\nОн уже находится в игре, дождитесь конца или предложите игру кому-нибудь другому"
+        txt = "Этому пользователю нельзя предложить игру в Пенальти ☹️\nОн уже находится в игре, дождитесь конца или предложите игру кому-нибудь другому"
         await m.answer(txt, reply_markup=to_main_btn)
     elif res == "self_error":
-        txt = f"Нельзя играть с самим собой ☹️"
+        txt = "Нельзя играть с самим собой ☹️"
         await m.answer(txt, reply_markup=to_main_btn)
     elif res in ("not_found", "error"):
-        txt = "Этому пользователю нельзя отправить предложение сыграть, попробуйте снова"
+        txt = (
+            "Этому пользователю нельзя отправить предложение сыграть, попробуйте снова"
+        )
         await m.answer(txt, reply_markup=to_main_btn)
     else:
         txt = f"📩Ваше предложение сыграть в Пенальти было отправлено {target}!"
@@ -171,18 +187,21 @@ async def decline_penalty_cmd(c: CQ, ssn, bot: Bot, action_queue):
 
     penalty = await cancel_penalty(ssn, pen_id)
     await c.message.delete()
-    await c.message.answer(
-        "❌ Вы отклонили игру в пенальти", reply_markup=to_main_btn)
+    await c.message.answer("❌ Вы отклонили игру в пенальти", reply_markup=to_main_btn)
 
     if penalty != "not_active":
         if penalty.target == c.from_user.id:
             await bot.send_message(
-                penalty.owner, f"❌ {penalty.target_username} отклонил предложение игры",
-                reply_markup=to_main_btn)
+                penalty.owner,
+                f"❌ {penalty.target_username} отклонил предложение игры",
+                reply_markup=to_main_btn,
+            )
         else:
             await bot.send_message(
-                penalty.target, f"❌ {penalty.owner_username} отклонил встречное предложение игры",
-                reply_markup=to_main_btn)
+                penalty.target,
+                f"❌ {penalty.owner_username} отклонил встречное предложение игры",
+                reply_markup=to_main_btn,
+            )
     try:
         del action_queue[str(c.from_user.id)]
     except Exception as error:
@@ -197,7 +216,8 @@ async def start_penalty_cmd(c: CQ, ssn, bot: Bot, action_queue, db):
     res = await start_penalty(ssn, pen_id, bot)
     if res in ("not_active", "error", "already_duel_playing"):
         await c.message.answer(
-            "❌ Эта игра больше недоступна", reply_markup=to_main_btn)
+            "❌ Эта игра больше недоступна", reply_markup=to_main_btn
+        )
     asyncio.create_task(check_penalty_timer(db, pen_id, res, 60, bot))
 
     try:
@@ -216,12 +236,12 @@ async def kicker_penalty_cmd(c: CQ, ssn, action_queue, db, bot):
     if res == "not_active":
         await c.message.delete()
         await c.message.answer(
-            "❌ Эта игра больше недоступна", reply_markup=to_main_btn)
+            "❌ Эта игра больше недоступна", reply_markup=to_main_btn
+        )
     else:
         txt = f"Ваш выбор - {corner}\nОжидайте хода второго игрока"
         await c.message.edit_caption(caption=txt)
-        asyncio.create_task(check_penalty_timer(
-            db, pen_id, res[0], res[1], bot))
+        asyncio.create_task(check_penalty_timer(db, pen_id, res[0], res[1], bot))
     try:
         del action_queue[str(c.from_user.id)]
     except Exception as error:
@@ -238,7 +258,8 @@ async def keeper_penalty_cmd(c: CQ, ssn, bot: Bot, action_queue, db):
     if res == "not_active":
         await c.message.delete()
         await c.message.answer(
-            "❌ Эта игра больше недоступна", reply_markup=to_main_btn)
+            "❌ Эта игра больше недоступна", reply_markup=to_main_btn
+        )
     elif res == "not_ready":
         await c.answer("Твой соперник еще не сделал удар.", show_alert=True)
     else:
@@ -258,16 +279,15 @@ async def keeper_penalty_cmd(c: CQ, ssn, bot: Bot, action_queue, db):
             await bot.send_message(penalty.kicker, txt, reply_markup=keyboard)
 
         else:
-            asyncio.create_task(check_penalty_timer(
-                db, pen_id, res[2], res[3], bot))
+            asyncio.create_task(check_penalty_timer(db, pen_id, res[2], res[3], bot))
             texts = await format_penalty_round_result_text(res[0], res[1])
 
             await c.message.answer(texts[0])
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
 
             await bot.send_message(penalty.keeper, texts[1])
 
-            await asyncio.sleep(.01)
+            await asyncio.sleep(0.01)
             await penalty_switch(ssn, pen_id, res[2], bot)
 
     try:

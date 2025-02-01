@@ -1,12 +1,11 @@
-from sqlalchemy import (BigInteger, Boolean, Column, DateTime, Float,
-                        ForeignKey, Integer, String, Text)
+from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from db.base import Base
 
 
 class Player(Base):
-    __tablename__ = 'player'
+    __tablename__ = "player"
 
     id = Column(BigInteger, primary_key=True)
     username = Column(String(255))
@@ -171,7 +170,7 @@ class CardXPack(Base):
 
 
 class PromoCode(Base):
-    __tablename__ = 'promocode'
+    __tablename__ = "promocode"
     id = Column(Integer, autoincrement=True, primary_key=True)
     promo = Column(Text)
     card_id = Column(Integer, nullable=True)
@@ -181,7 +180,7 @@ class PromoCode(Base):
 
 
 class PromoUser(Base):
-    __tablename__ = 'promouser'
+    __tablename__ = "promouser"
     id = Column(BigInteger, autoincrement=True, primary_key=True)
     promo_id = Column(Integer)
     user_id = Column(BigInteger)

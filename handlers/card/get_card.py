@@ -9,10 +9,15 @@ from aiogram.types import Message as Mes
 
 from db.models import CardItem
 from db.queries.card_queries import get_free_card, use_promo
-from keyboards.cards_kbs import (accept_new_card_btn, back_to_cards_kb,
-                                 card_kb, no_free_card_kb, fintpass_back_kb)
+from keyboards.cards_kbs import (
+    accept_new_card_btn,
+    back_to_cards_kb,
+    card_kb,
+    fintpass_back_kb,
+    no_free_card_kb,
+)
 from keyboards.main_kbs import back_to_main_btn
-from keyboards.pay_kbs import cards_pack_btn, to_packs_kb, player_pick_kb
+from keyboards.pay_kbs import cards_pack_btn, player_pick_kb, to_packs_kb
 from middlewares.actions import ActionMiddleware
 from utils.format_texts import format_new_free_card_text, format_view_my_cards_text
 from utils.misc import format_delay_text
@@ -60,8 +65,7 @@ async def get_free_card_cmd(c: CQ, ssn, action_queue):
         except Exception as error:
             logging.error(f"Del error | chat {c.from_user.id}\n{error}")
 
-        await c.message.answer_photo(
-            card.image, txt, reply_markup=accept_new_card_btn)
+        await c.message.answer_photo(card.image, txt, reply_markup=accept_new_card_btn)
 
     try:
         del action_queue[str(c.from_user.id)]
@@ -102,12 +106,11 @@ async def use_promo_cmd(m: Mes, state: FSM, ssn):
             if res[0] == "card":
                 card = res[1]
                 txt = await format_new_free_card_text(card)
-                await m.answer_photo(
-                    card.image, txt, reply_markup=accept_new_card_btn)
+                await m.answer_photo(card.image, txt, reply_markup=accept_new_card_btn)
             elif res[0] == "added":
                 txt = "✅ Промокод успешно активирован!!\nПак начислен на твой баланс!"
                 await m.answer(txt, reply_markup=to_packs_kb)
-            elif res[0] == 'fintpass':
+            elif res[0] == "fintpass":
                 # logging.info(
                 # f"User {m.from_user.id}  label {pay.label} kind {pay.kind}")
 
@@ -127,10 +130,15 @@ async def use_promo_cmd(m: Mes, state: FSM, ssn):
 
                 await m.answer_photo(
                     pick_card.image,
-                    txt, reply_markup=player_pick_kb(page, last, res[2], pick_card.id))
+                    txt,
+                    reply_markup=player_pick_kb(page, last, res[2], pick_card.id),
+                )
                 await state.set_state(UserStates.player_pick)
                 await state.update_data(pick_id=res[2], cards=res[3])
-                await m.answer(text='FINT PASS успешно активирован ✅', reply_markup=fintpass_back_kb)
+                await m.answer(
+                    text="FINT PASS успешно активирован ✅",
+                    reply_markup=fintpass_back_kb,
+                )
             else:
                 txt = "Успешно ✅!\nВот карты, которые ты получил!"
                 await m.answer(txt, reply_markup=cards_pack_btn(res[1]))

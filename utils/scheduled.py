@@ -1,18 +1,24 @@
 import asyncio
 import datetime as dt
 import logging
-from textwrap import dedent
 
 from aiogram import Bot
 
 from db.models import Games, Penalty, Player
 from db.queries.penalty_queries import check_penalty, get_active_penalties
-from db.queries.scheduled_queries import (clear_user_trade_table, get_free_card_notity_users,
-                                          remove_premium_from_users, check_trade_count)
+from db.queries.scheduled_queries import (
+    check_trade_count,
+    clear_user_trade_table,
+    get_free_card_notity_users,
+    remove_premium_from_users,
+)
 from keyboards.games_kbs import after_penalty_kb
 from keyboards.main_kbs import to_main_btn
-from keyboards.scheduled_kbs import (scheduled_darts_btn,
-                                     scheduled_freecard_btn, scheduled_ls_btn)
+from keyboards.scheduled_kbs import (
+    scheduled_darts_btn,
+    scheduled_freecard_btn,
+    scheduled_ls_btn,
+)
 
 
 async def get_free_card_and_ls_notify(db, bot: Bot):
@@ -49,8 +55,10 @@ async def send_free_card_notify(bot: Bot, user_id, delay):
     await asyncio.sleep(delay)
     try:
         await bot.send_message(
-            user_id, "Привет! Ты можешь забрать свою бесплатную карту! 🎁",
-            reply_markup=scheduled_freecard_btn)
+            user_id,
+            "Привет! Ты можешь забрать свою бесплатную карту! 🎁",
+            reply_markup=scheduled_freecard_btn,
+        )
     except Exception as error:
         logging.error(f"Send free card notify error | chat {user_id}\n{error}")
 
@@ -59,22 +67,24 @@ async def send_lucky_shot_notify(bot: Bot, user_id, delay):
     await asyncio.sleep(delay)
     try:
         await bot.send_message(
-            user_id, "Привет! Ты можешь проверить свою удачу в удачном ударе! ☘️",
-            reply_markup=scheduled_ls_btn)
+            user_id,
+            "Привет! Ты можешь проверить свою удачу в удачном ударе! ☘️",
+            reply_markup=scheduled_ls_btn,
+        )
     except Exception as error:
-        logging.error(
-            f"Send lucky shot notify error | chat {user_id}\n{error}")
+        logging.error(f"Send lucky shot notify error | chat {user_id}\n{error}")
 
 
 async def send_darts_notify(bot: Bot, user_id, delay):
     await asyncio.sleep(delay)
     try:
         await bot.send_message(
-            user_id, "Привет! Ты можешь проверить свою удачу бросив дротик в игре Дартс! ☘️",
-            reply_markup=scheduled_darts_btn)
+            user_id,
+            "Привет! Ты можешь проверить свою удачу бросив дротик в игре Дартс! ☘️",
+            reply_markup=scheduled_darts_btn,
+        )
     except Exception as error:
-        logging.error(
-            f"Send lucky shot notify error | chat {user_id}\n{error}")
+        logging.error(f"Send lucky shot notify error | chat {user_id}\n{error}")
 
 
 async def re_check_active_penalties(db, bot):
@@ -87,9 +97,10 @@ async def re_check_active_penalties(db, bot):
             delay = penalty.last_action - date_ts
             if delay <= 0:
                 delay = num + 1
-            asyncio.create_task(check_penalty_timer(
-                db, penalty.id, penalty.last_action, delay, bot))
-            await asyncio.sleep(.001)
+            asyncio.create_task(
+                check_penalty_timer(db, penalty.id, penalty.last_action, delay, bot)
+            )
+            await asyncio.sleep(0.001)
 
 
 async def check_penalty_timer(db, penalty_id, date_ts, delay, bot: Bot):
@@ -111,12 +122,11 @@ async def check_penalty_timer(db, penalty_id, date_ts, delay, bot: Bot):
             except Exception as error:
                 logging.error(f"Delete error | chat {del_id}\n{error}")
 
-            await asyncio.sleep(.2)
+            await asyncio.sleep(0.2)
 
             txt = "К сожалению, ваш оппонент не принял игру за минуту"
             try:
-                await bot.send_message(
-                    u_id, txt, reply_markup=to_main_btn)
+                await bot.send_message(u_id, txt, reply_markup=to_main_btn)
             except Exception as error:
                 logging.error(f"Send error | chat {u_id}\n{error}")
 
@@ -125,7 +135,7 @@ async def check_penalty_timer(db, penalty_id, date_ts, delay, bot: Bot):
                 await bot.delete_message(penalty.owner, penalty.owner_msg_id)
             except Exception as error:
                 logging.error(f"Delete error | chat {penalty.owner}\n{error}")
-            await asyncio.sleep(.03)
+            await asyncio.sleep(0.03)
             try:
                 await bot.delete_message(penalty.target, penalty.target_msg_id)
             except Exception as error:
@@ -136,19 +146,21 @@ async def check_penalty_timer(db, penalty_id, date_ts, delay, bot: Bot):
                 target_txt = f"Игрок {penalty.owner_username} слишком долго не отвечал, вы победили!"
             else:
                 owner_txt = f"Игрок {penalty.target_username} слишком долго не отвечал, вы победили!"
-                target_txt = f"Тебя слишком долго не было в игре, поэтому тебе засчитано поражение"
+                target_txt = "Тебя слишком долго не было в игре, поэтому тебе засчитано поражение"
 
             try:
                 await bot.send_message(
-                    penalty.owner, owner_txt, reply_markup=after_penalty_kb)
+                    penalty.owner, owner_txt, reply_markup=after_penalty_kb
+                )
             except Exception as error:
                 logging.error(f"Send error | chat {penalty.owner}\n{error}")
 
-            await asyncio.sleep(.2)
+            await asyncio.sleep(0.2)
 
             try:
                 await bot.send_message(
-                    penalty.target, target_txt, reply_markup=after_penalty_kb)
+                    penalty.target, target_txt, reply_markup=after_penalty_kb
+                )
             except Exception as error:
                 logging.error(f"Send error | chat {penalty.target}\n{error}")
 

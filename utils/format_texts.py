@@ -159,16 +159,36 @@ async def format_penalty_round_result_text(penalty: Penalty, result):
 
     # Условие инвертировано, так как уже произошла смена сторон
     if penalty.keeper == penalty.target:
-        keeper_txt = keeper_res_txt + "Результаты твоих ударов:\n" + \
-            owner_res_txt + "\nРезультаты ударов противника:\n" + target_res_txt
-        kicker_txt = kicker_res_txt + "Результаты твоих ударов:\n" + \
-            target_res_txt + "\nРезультаты ударов противника:\n" + owner_res_txt
+        keeper_txt = (
+            keeper_res_txt
+            + "Результаты твоих ударов:\n"
+            + owner_res_txt
+            + "\nРезультаты ударов противника:\n"
+            + target_res_txt
+        )
+        kicker_txt = (
+            kicker_res_txt
+            + "Результаты твоих ударов:\n"
+            + target_res_txt
+            + "\nРезультаты ударов противника:\n"
+            + owner_res_txt
+        )
 
     else:
-        keeper_txt = keeper_res_txt + "Результаты твоих ударов:\n" + \
-            target_res_txt + "\nРезультаты ударов противника:\n" + owner_res_txt
-        kicker_txt = kicker_res_txt + "Результаты твоих ударов:\n" + \
-            owner_res_txt + "\nРезультаты ударов противника:\n" + target_res_txt
+        keeper_txt = (
+            keeper_res_txt
+            + "Результаты твоих ударов:\n"
+            + target_res_txt
+            + "\nРезультаты ударов противника:\n"
+            + owner_res_txt
+        )
+        kicker_txt = (
+            kicker_res_txt
+            + "Результаты твоих ударов:\n"
+            + owner_res_txt
+            + "\nРезультаты ударов противника:\n"
+            + target_res_txt
+        )
 
     return keeper_txt, kicker_txt
 
@@ -191,7 +211,9 @@ async def format_penalty_final_result_text(penalty: Penalty):
         if penalty.owner == penalty.winner:
             winner_txt = f"\n{penalty.owner_username} победил и получил карту соперника"
         elif penalty.target == penalty.winner:
-            winner_txt = f"\n{penalty.target_username} победил и получил карту соперника"
+            winner_txt = (
+                f"\n{penalty.target_username} победил и получил карту соперника"
+            )
         else:
             winner_txt = "\n🏆 Вы забили одинаковое количество голов! Предлагаем вам переигровку или же ничью, выбор за вами!"
 
