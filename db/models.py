@@ -2,7 +2,7 @@ from sqlalchemy import BigInteger, Column, Enum, ForeignKey, Integer, String, Te
 from sqlalchemy.orm import relationship
 
 from db.base import Base
-from enum_types import CardPositionType
+from enum_types import CardBattleGameStatus, CardBattlePlayerStatus, CardPositionType
 
 
 class Player(Base):
@@ -44,7 +44,11 @@ class Player(Base):
 
     trade_count = Column(BigInteger, default=0)
 
-    rating = Column(Integer, default=0)
+    card_battle_rating = Column(Integer, default=0)
+    card_battle_status = Column(
+        Enum(CardBattlePlayerStatus), default=CardBattlePlayerStatus.READY
+    )
+    win_card_battles = relationship("CardBattle", back_populates="winner")
 
     usercards = relationship("UserCard", back_populates="player")
 
@@ -266,3 +270,53 @@ class Games(Base):
     attempts = Column(Integer, default=0)
 
     curr_casino = Column(Integer, default=0)
+
+
+class UserCardsToBattle(Base):
+    __tablename__ = "cardstobattle"
+
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    user_card_id = Column(ForeignKey("usercard.id"), nullable=False)
+    battle_id = Column(ForeignKey("cardbattle.id"), nullable=False)
+
+    user_card = relationship("UserCard")
+    battle = relationship("CardBattle", back_populates="cards")
+
+
+class CardBattle(Base):
+    __tablename__ = "cardbattle"
+
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    status = Column(Enum(CardBattleGameStatus), nullable=True, default=None)
+
+    player_blue_id = Column(ForeignKey("player.id"), nullable=False)
+    player_red_id = Column(ForeignKey("player.id"), nullable=False)
+    winner_id = Column(ForeignKey("player.id"), nullable=True, default=None)
+
+    player_blue = relationship(
+        "Player", foreign_keys=[player_blue_id], back_populates="card_battles"
+    )
+    player_red = relationship(
+        "Player", foreign_keys=[player_red_id], back_populates="card_battles"
+    )
+    winner = relationship(
+        "Player", foreign_keys=[winner_id], back_populates="win_card_battles"
+    )
+
+    turns = relationship("CardBattleTurn", back_populates="battle")
+    cards = relationship("UserCardsToBattle", back_populates="battle")
+
+
+class CardBattleTurn(Base):
+    __tablename__ = "cardbattleturn"
+
+    id = Column(Integer, autoincrement=True, primary_key=True)
+    player_id = Column(ForeignKey("player.id"), nullable=False)
+    card_id = Column(ForeignKey("usercard.id"), nullable=False)
+    battle_id = Column(ForeignKey("cardbattle.id"), nullable=False)
+
+    battle = relationship(
+        "CardBattle", foreign_keys=[battle_id], back_populates="turns"
+    )
+    player = relationship("Player", foreign_keys=[player_id])
+    card = relationship("UserCard", foreign_keys=[card_id])
