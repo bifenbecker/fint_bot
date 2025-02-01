@@ -19,6 +19,9 @@ games_kb = InlineKeyboardMarkup(
         [
             InlineKeyboardButton(text="🎰 Казино", callback_data="casino"),
         ],
+        [
+            InlineKeyboardButton(text="⚖️ Битва составов", callback_data="cardsbattle"),
+        ],
         [InlineKeyboardButton(text="⏪ Назад", callback_data="startplay")],
     ]
 )
