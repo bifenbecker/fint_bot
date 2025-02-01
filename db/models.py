@@ -1,7 +1,8 @@
-from sqlalchemy import BigInteger, Column, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Column, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from db.base import Base
+from enum_types import CardPositionType
 
 
 class Player(Base):
@@ -43,6 +44,8 @@ class Player(Base):
 
     trade_count = Column(BigInteger, default=0)
 
+    rating = Column(Integer, default=0)
+
     usercards = relationship("UserCard", back_populates="player")
 
 
@@ -59,6 +62,10 @@ class CardItem(Base):
     points = Column(Integer)
 
     status = Column(String(5), default="on")
+    position = Column(Enum(CardPositionType), nullable=True, default=None)
+    attack_rate = Column(Integer, default=0)
+    defense_rate = Column(Integer, default=0)
+    general_rate = Column(Integer, default=0)
 
 
 class UserCard(Base):
