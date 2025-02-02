@@ -48,7 +48,9 @@ class Player(Base):
     card_battle_status = Column(
         Enum(CardBattlePlayerStatus), default=CardBattlePlayerStatus.READY
     )
-    win_card_battles = relationship("CardBattle", back_populates="winner")
+    win_card_battles = relationship(
+        "CardBattle", back_populates="winner", foreign_keys="CardBattle.winner_id"
+    )
 
     usercards = relationship("UserCard", back_populates="player")
 
@@ -294,13 +296,14 @@ class CardBattle(Base):
     winner_id = Column(ForeignKey("player.id"), nullable=True, default=None)
 
     player_blue = relationship(
-        "Player", foreign_keys=[player_blue_id], back_populates="card_battles"
+        "Player",
+        foreign_keys="CardBattle.player_blue_id",
     )
-    player_red = relationship(
-        "Player", foreign_keys=[player_red_id], back_populates="card_battles"
-    )
+    player_red = relationship("Player", foreign_keys="CardBattle.player_red_id")
     winner = relationship(
-        "Player", foreign_keys=[winner_id], back_populates="win_card_battles"
+        "Player",
+        back_populates="win_card_battles",
+        foreign_keys="CardBattle.winner_id",
     )
 
     turns = relationship("CardBattleTurn", back_populates="battle")
@@ -315,8 +318,6 @@ class CardBattleTurn(Base):
     card_id = Column(ForeignKey("usercard.id"), nullable=False)
     battle_id = Column(ForeignKey("cardbattle.id"), nullable=False)
 
-    battle = relationship(
-        "CardBattle", foreign_keys=[battle_id], back_populates="turns"
-    )
-    player = relationship("Player", foreign_keys=[player_id])
-    card = relationship("UserCard", foreign_keys=[card_id])
+    battle = relationship("CardBattle", back_populates="turns")
+    player = relationship("Player")
+    card = relationship("UserCard")

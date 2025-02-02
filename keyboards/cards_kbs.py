@@ -151,7 +151,6 @@ def my_cards_kb(page, last, sorting):
         )
 
     btns.append(page_btns)
-
     btns.append(
         [InlineKeyboardButton(text="⏪ Назад", callback_data="back_to_mycards")]
     )

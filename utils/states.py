@@ -21,6 +21,11 @@ class UserStates(StatesGroup):
     player_pick = State()
 
 
+class CardsBattleStates(StatesGroup):
+    select_cards_battle = State()
+    search_cards_battle = State()
+
+
 class MultiTrade(StatesGroup):
     owner_cards = State()
     target_username = State()

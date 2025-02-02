@@ -27,6 +27,22 @@ async def format_view_my_cards_text(card: CardItem):
     return dedent(txt)
 
 
+async def format_view_cards_battle_text(card: CardItem):
+    txt = f"""
+    {card.name} <b>{card.card_name}</b>
+    Лига: <b>{card.league}</b>
+    Команда: <b>{card.team}</b>
+    Рейтинг: <b>{card.points}</b>
+    Редкость: <b>{card.rarity}</b>
+    Коллекционный номер: <b>{card.id}</b>
+    Позиция: <b>{card.position}</b>
+    Атака: <b>{card.attack_rate}</b>
+    Защита: <b>{card.defense_rate}</b>
+    Общий рейтинг: <b>{card.general_rate}</b>
+    """
+    return dedent(txt)
+
+
 async def format_list_my_cards_text(cards: dict):
     txts = []
     txt = "Список всех ваших карт:\n"
