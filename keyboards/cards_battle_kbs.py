@@ -1,6 +1,7 @@
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 
-from keyboards.cb_data import PageCB
+from enum_types import CardBattleTurnType
+from keyboards.cb_data import PageCB, TurnTypeCB
 
 
 class SelectCardOnPageCB(PageCB, prefix="select_card_on_page"):
@@ -79,3 +80,36 @@ search_cards_battle_kb = InlineKeyboardMarkup(
         [InlineKeyboardButton(text="🧑💻 В личный кабинет", callback_data="startplay")],
     ]
 )
+
+cancel_cards_battle_btn = InlineKeyboardButton(
+    text="Отмена", callback_data="cancel_cards_battle"
+)
+
+
+def get_choose_type_of_turn_kb(battle_id: int, red_player_id: int, blue_player_id: int):
+    return InlineKeyboardMarkup(
+        inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    text="Атака",
+                    callback_data=TurnTypeCB(
+                        type=CardBattleTurnType.ATTACK.value,
+                        battle_id=battle_id,
+                        red_player_id=red_player_id,
+                        blue_player_id=blue_player_id,
+                    ).pack(),
+                )
+            ],
+            [
+                InlineKeyboardButton(
+                    text="Защита",
+                    callback_data=TurnTypeCB(
+                        type=CardBattleTurnType.DEFENSE.value,
+                        battle_id=battle_id,
+                        red_player_id=red_player_id,
+                        blue_player_id=blue_player_id,
+                    ).pack(),
+                )
+            ],
+        ]
+    )

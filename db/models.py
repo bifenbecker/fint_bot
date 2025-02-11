@@ -1,8 +1,27 @@
-from sqlalchemy import BigInteger, Column, Enum, ForeignKey, Integer, String, Text
+import bisect
+
+from sqlalchemy import (
+    BigInteger,
+    Column,
+    Enum,
+    ForeignKey,
+    Integer,
+    String,
+    Text,
+)
+from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
 
 from db.base import Base
-from enum_types import CardBattleGameStatus, CardBattlePlayerStatus, CardPositionType
+from enum_types import (
+    CardBattleGameStatus,
+    CardBattlePlayerStatus,
+    CardBattleTurnType,
+    CardPositionType,
+)
+
+boundaries = [0, 200, 400, 600, 800, 1000, 1300, 1600, 1900, 2500, float("inf")]
+division_numbers = [10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
 
 
 class Player(Base):
@@ -54,6 +73,25 @@ class Player(Base):
 
     usercards = relationship("UserCard", back_populates="player")
 
+    @hybrid_property
+    def division(self) -> int:
+        index = bisect.bisect_right(boundaries, self.card_battle_rating) - 1
+        if index > len(division_numbers) or index < 0:
+            raise Exception(f"Invalid rating: {self.card_battle_rating}")
+        return division_numbers[index]
+
+    @hybrid_property
+    def max_rating(self) -> int:
+        index = bisect.bisect_right(boundaries, self.card_battle_rating) + 1
+        index = len(boundaries) if index > len(boundaries) else index
+        return boundaries[index]
+
+    @hybrid_property
+    def min_rating(self) -> int:
+        index = bisect.bisect_right(boundaries, self.card_battle_rating) - 3
+        index = 0 if index < 0 else index
+        return boundaries[index]
+
 
 class CardItem(Base):
     __tablename__ = "carditem"
@@ -85,7 +123,7 @@ class UserCard(Base):
     duplicate = Column(Integer, default=0)
     tradeble = Column(String(15), default="yes")
 
-    card = relationship("CardItem")
+    card = relationship("CardItem", lazy="selectin")
     player = relationship("Player", back_populates="usercards")
 
 
@@ -275,14 +313,14 @@ class Games(Base):
 
 
 class UserCardsToBattle(Base):
-    __tablename__ = "cardstobattle"
+    __tablename__ = "usercardstobattle"
 
     id = Column(Integer, autoincrement=True, primary_key=True)
     user_card_id = Column(ForeignKey("usercard.id"), nullable=False)
     battle_id = Column(ForeignKey("cardbattle.id"), nullable=False)
 
-    user_card = relationship("UserCard")
-    battle = relationship("CardBattle", back_populates="cards")
+    user_card = relationship("UserCard", lazy="selectin")
+    battle = relationship("CardBattle", back_populates="cards", lazy="selectin")
 
 
 class CardBattle(Base):
@@ -302,6 +340,7 @@ class CardBattle(Base):
     player_red = relationship("Player", foreign_keys="CardBattle.player_red_id")
     winner = relationship(
         "Player",
+        lazy="selectin",
         back_populates="win_card_battles",
         foreign_keys="CardBattle.winner_id",
     )
@@ -315,9 +354,10 @@ class CardBattleTurn(Base):
 
     id = Column(Integer, autoincrement=True, primary_key=True)
     player_id = Column(ForeignKey("player.id"), nullable=False)
-    card_id = Column(ForeignKey("usercard.id"), nullable=False)
+    card_id = Column(ForeignKey("usercardstobattle.id"), nullable=False)
     battle_id = Column(ForeignKey("cardbattle.id"), nullable=False)
+    type = Column(Enum(CardBattleTurnType), nullable=False)
 
     battle = relationship("CardBattle", back_populates="turns")
     player = relationship("Player")
-    card = relationship("UserCard")
+    card = relationship("UserCardsToBattle")

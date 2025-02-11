@@ -24,6 +24,7 @@ class UserStates(StatesGroup):
 class CardsBattleStates(StatesGroup):
     select_cards_battle = State()
     search_cards_battle = State()
+    playing_cards_battle = State()
 
 
 class MultiTrade(StatesGroup):

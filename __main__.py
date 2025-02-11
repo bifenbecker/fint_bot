@@ -24,7 +24,7 @@ from handlers.games import (
     penalty_card_owner,
     penalty_card_target,
 )
-from handlers.games.cards_battle import cards_battle_start
+from handlers.games.cards_battle import cards_battle_start, cards_battle_game
 from handlers.games.packs_battle import (
     pack_battle_create,
     pack_battle_main,
@@ -137,6 +137,7 @@ async def main():
     dp.include_router(pack_battle_target.router)
 
     dp.include_router(cards_battle_start.router)
+    dp.include_router(cards_battle_game.router)
 
     dp.include_router(get_card.router)
     dp.include_router(buy_cards.router)
