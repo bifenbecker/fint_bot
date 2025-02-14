@@ -156,7 +156,6 @@ async def save_selected_cards(
     add_counter = Counter([selected_card.card.position])
     check = counter + add_counter
 
-    # TODO: Return value 5
     if check.total() == 5:
         await c.answer("✅ Карта выбрана")
         selected.add(selected_card)
@@ -231,7 +230,7 @@ async def send_roll_result_messages(
     )
     await bot.send_message(
         chat_id=red_player_id,
-        text="✅ Соперник найден. Вы 'красный' игрок - начинаете первым.\nВыбираете тип хода",
+        text="🔸Соперник найден.\nВы ходите первым, ваш цвет красный 🟥",
         reply_markup=get_choose_type_of_turn_kb(
             battle_id=battle.id,
             red_player_id=red_player_id,
@@ -240,7 +239,7 @@ async def send_roll_result_messages(
     )
     await bot.send_message(
         chat_id=blue_player_id,
-        text="✅ Соперник найден. Вы 'синий' игрок",
+        text="🔸Соперник найден.\nВы ходите вторым, ваш цвет синий 🟦",
     )
 
 
