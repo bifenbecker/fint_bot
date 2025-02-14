@@ -75,6 +75,7 @@ async def start_play_cmd(c: CQ, ssn, bot: Bot):
         🏆 Рейтинг собранных карточек: {user.rating}
         🧩 Сезонный рейтинг коллекционера: {user.season_rating}
         📊 Место в сезонном рейтинге: {res[1]}
+        🎮 Рейтинг «Битвы составов»: {user.card_battle_rating} ({user.division} дивизион)
         """
         await c.message.answer(dedent(txt), reply_markup=main_kb)
 
