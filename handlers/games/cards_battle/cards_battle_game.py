@@ -97,7 +97,7 @@ async def select_card_for_turn(
     )
     await bot.send_message(
         chat_id=blue_player_id,
-        text=f"Ваш соперник выбрал {'атаку' if callback_data.type == CardBattleTurnType.ATTACK.value else 'защиту'}\nГотов?",
+        text=f"ИГРОК {'АТАКУЕТ' if callback_data.type == CardBattleTurnType.ATTACK.value else 'ЗАЩИЩАЕТСЯ'}, ТЫ {'ЗАЩИЩАЕШЬСЯ' if callback_data.type == CardBattleTurnType.ATTACK.value else 'АТАКУЕШЬ'}\nГотов?",
         reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
