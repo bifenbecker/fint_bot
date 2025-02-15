@@ -7,15 +7,18 @@ from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
 from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMediaPhoto
+from aiogram.utils.media_group import MediaGroupBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import UserCard, UserCardsToBattle
+from db.models import CardBattleTurn, UserCard, UserCardsToBattle
 from db.queries.cards_battle_queries import (
+    LastTurnResult,
     add_turn,
     battle_score,
     finish_players_cards_battle,
+    get_battle,
     get_battle_result,
-    get_last_win_turn,
+    get_last_turn_result,
     get_remaining_cards,
     opposite_player_has_turn,
     player_add_cards_pick_for_card_battle,
@@ -25,6 +28,7 @@ from db.queries.global_queries import get_user_info
 from enum_types import CardBattleTurnType
 from keyboards.cards_battle_kbs import (
     SelectCardOnPageCB,
+    finish_cards_battle_kb,
     select_cards_for_cards_battle_kb,
 )
 from keyboards.cb_data import PageCB, TurnTypeCB
@@ -169,6 +173,114 @@ async def paginate_cards_cmd(c: CQ, action_queue, state: FSM, callback_data: Pag
         logging.info(f"Action delete error\n{error}")
 
 
+async def send_cards_battle_results(
+    ssn: AsyncSession, bot: Bot, battle_id: int
+) -> None:
+    battle = await get_battle(ssn, battle_id)
+    red_player = await get_user_info(ssn, battle.player_red_id)
+    blue_player = await get_user_info(ssn, battle.player_blue_id)
+    score: dict[int, int] = await battle_score(ssn, battle_id)
+    red_player_score = score.get(battle.player_red_id, 0)
+    blue_player_score = score.get(battle.player_blue_id, 0)
+    txt = """
+    🏵️Игра окончена
+    ⚽️Счет: {red_player_score} - {blue_player_score}
+    ✅{battle_result}
+
+    🟦Синий: {blue_player_username}
+    🟥Красный: {red_player_username}
+
+    🏆Твой рейтинг: {player_rating}
+    📊Твой дивизион: {player_division}
+    """
+    battle_result = "Ничья!"
+    if red_player_score != blue_player_score:
+        winner = await get_battle_result(ssn, battle_id)
+        battle_result = f"Победил: {winner.username}"
+
+    await bot.send_message(
+        text=txt.format(
+            battle_result=battle_result,
+            red_player_score=red_player_score,
+            blue_player_score=blue_player_score,
+            blue_player_username=blue_player.username,
+            red_player_username=red_player.username,
+            player_rating=red_player.card_battle_rating,
+            player_division=red_player.division,
+        ),
+        chat_id=battle.player_red_id,
+        reply_markup=finish_cards_battle_kb,
+    )
+    await bot.send_message(
+        text=txt.format(
+            battle_result=battle_result,
+            red_player_score=red_player_score,
+            blue_player_score=blue_player_score,
+            blue_player_username=blue_player.username,
+            red_player_username=red_player.username,
+            player_rating=blue_player.card_battle_rating,
+            player_division=blue_player.division,
+        ),
+        chat_id=battle.player_blue_id,
+        reply_markup=finish_cards_battle_kb,
+    )
+
+
+def get_media_group_for_player(
+    last_turn_result: LastTurnResult,
+    player_id: int,
+    red_player_id: int,
+    blue_player_id: int,
+) -> MediaGroupBuilder:
+    def get_turn_text_for_card(turn: CardBattleTurn, is_win: bool) -> str:
+        card = turn.card.user_card.card
+
+        return f"""
+👤 {card.name} ({card.card_name})
+🗡️ Атака: {card.attack_rate} {("✅" if is_win else "❌") if turn.type == CardBattleTurnType.ATTACK else ""}
+🛡️ Защита: {card.defense_rate} {("✅" if is_win else "❌") if turn.type == CardBattleTurnType.DEFENSE else ""}
+💎 Рейтинг: {card.general_rate} 
+        """
+
+    winner_title_txt = "⚽️ ТЫ ЗАБИЛ ГОЛ"
+    looser_title_txt = "❌ ТЫ ПРОПУСТИЛ ГОЛ"
+
+    txt = """
+{title}
+
+🟥Игрок красного: 
+{red_player_card_text}
+
+🟦Игрок синего:
+{blue_player_card_text}
+    """
+
+    media_group = MediaGroupBuilder(
+        caption=txt.format(
+            title=winner_title_txt
+            if last_turn_result.win_turn.player_id == player_id
+            else looser_title_txt,
+            red_player_card_text=get_turn_text_for_card(
+                last_turn_result.win_turn
+                if last_turn_result.win_turn.player_id == red_player_id
+                else last_turn_result.lose_turn,
+                True if last_turn_result.win_turn.player_id == red_player_id else False,
+            ),
+            blue_player_card_text=get_turn_text_for_card(
+                last_turn_result.win_turn
+                if last_turn_result.win_turn.player_id == blue_player_id
+                else last_turn_result.lose_turn,
+                True
+                if last_turn_result.win_turn.player_id == blue_player_id
+                else False,
+            ),
+        )
+    )
+    media_group.add_photo(last_turn_result.win_turn.card.user_card.card.image)
+    media_group.add_photo(last_turn_result.lose_turn.card.user_card.card.image)
+    return media_group
+
+
 @router.callback_query(
     StateFilter(CardsBattleStates.playing_cards_battle),
     SelectCardOnPageCB.filter(),
@@ -215,56 +327,21 @@ async def pick_card_handler(
             score: dict[int, int] = await battle_score(ssn, battle_id)
             red_player_score = score.get(red_player_id, 0)
             blue_player_score = score.get(blue_player_id, 0)
-            if last == 0 and last_opposite == 0:
-                red_player = await get_user_info(ssn, red_player_id)
-                blue_player = await get_user_info(ssn, blue_player_id)
-                if red_player_score == blue_player_score:
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nНичья!\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=red_player_id,
-                    )
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nНичья!\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=blue_player_id,
-                    )
-                else:
-                    winner = await get_battle_result(ssn, battle_id)
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nПобедил: {winner.username}\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=red_player_id,
-                    )
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nПобедил: {winner.username}\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=blue_player_id,
-                    )
-                await finish_players_cards_battle(ssn, battle_id)
-                await update_ratings_after_battle(ssn, battle_id)
-            elif (red_player_score == 3 and blue_player_score == 0) or (
-                red_player_score == 0 and blue_player_score == 3
+            if (last == 0 and last_opposite == 0) or (
+                (red_player_score == 3 and blue_player_score == 0)
+                or (red_player_score == 0 and blue_player_score == 3)
             ):
-                red_player = await get_user_info(ssn, red_player_id)
-                blue_player = await get_user_info(ssn, blue_player_id)
-                if red_player_score == blue_player_score:
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nНичья!\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=red_player_id,
-                    )
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nНичья!\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=blue_player_id,
-                    )
-                else:
-                    winner = await get_battle_result(ssn, battle_id)
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nПобедил: {winner.username}\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=red_player_id,
-                    )
-                    await bot.send_message(
-                        text=f"Игра окончена\nСчет: {red_player_score} - {blue_player_score}\nПобедил: {winner.username}\n\nСиний: {blue_player.username}\nКрасный: {red_player.username}",
-                        chat_id=blue_player_id,
-                    )
                 await finish_players_cards_battle(ssn, battle_id)
                 await update_ratings_after_battle(ssn, battle_id)
+
+                await send_cards_battle_results(ssn, bot, battle_id)
+                await state.clear()
+                try:
+                    del action_queue[str(c.from_user.id)]
+                except Exception as error:
+                    logging.info(f"Action delete error\n{error}")
+
+                return
             else:
                 txt = await format_view_cards_battle_text(
                     remaining_cards[0].user_card.card
@@ -273,20 +350,22 @@ async def pick_card_handler(
                     opposite_remaining_cards[0].user_card.card
                 )
 
-                last_win_turn = await get_last_win_turn(ssn, battle_id)
+                last_turn_result = await get_last_turn_result(ssn, battle_id)
+                last_win_turn = last_turn_result.win_turn
                 if last_win_turn:
-                    win_text = await format_view_cards_battle_text(
-                        last_win_turn.card.user_card.card
+                    red_player_media_group = get_media_group_for_player(
+                        last_turn_result, red_player_id, red_player_id, blue_player_id
                     )
-                    await bot.send_photo(
-                        photo=last_win_turn.card.user_card.card.image,
-                        caption=f"Победил\n{win_text}\nСчет: \nКрасный: {red_player_score}\nСиний: {blue_player_score}",
+                    blue_player_media_group = get_media_group_for_player(
+                        last_turn_result, blue_player_id, red_player_id, blue_player_id
+                    )
+                    await bot.send_media_group(
                         chat_id=red_player_id,
+                        media=red_player_media_group.build(),
                     )
-                    await bot.send_photo(
-                        photo=last_win_turn.card.user_card.card.image,
-                        caption=f"Победил\n{win_text}\nСчет: \nКрасный: {red_player_score}\nСиний: {blue_player_score}",
+                    await bot.send_media_group(
                         chat_id=blue_player_id,
+                        media=blue_player_media_group.build(),
                     )
                 else:
                     await bot.send_message(

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Sequence
 
 from sqlalchemy import and_, insert, select, update
@@ -6,6 +7,12 @@ from sqlalchemy.orm import selectinload
 
 from db.models import CardBattle, CardBattleTurn, Player, UserCard, UserCardsToBattle
 from enum_types import CardBattleGameStatus, CardBattlePlayerStatus, CardBattleTurnType
+
+
+@dataclass(frozen=True)
+class LastTurnResult:
+    win_turn: CardBattleTurn | None = None
+    lose_turn: CardBattleTurn | None = None
 
 
 async def change_player_card_battle_status(
@@ -223,6 +230,22 @@ async def get_last_win_turn(ssn: AsyncSession, battle_id: int) -> CardBattleTurn
     return await get_result_turns(ssn, turn1, turn2)
 
 
+async def get_last_turn_result(ssn: AsyncSession, battle_id: int) -> LastTurnResult:
+    query = (
+        select(CardBattleTurn)
+        .options(selectinload(CardBattleTurn.card))
+        .filter(
+            CardBattleTurn.battle_id == battle_id,
+        )
+    )
+    turns = (await ssn.scalars(query)).all()
+    turn1, turn2 = turns[len(turns) - 2 :]
+    win_turn = await get_result_turns(ssn, turn1, turn2)
+    return LastTurnResult(
+        win_turn=win_turn, lose_turn=turn1 if win_turn.id == turn2.id else turn2
+    )
+
+
 async def get_battle_result(ssn: AsyncSession, battle_id: int) -> Player:
     score = await battle_score(ssn, battle_id)
     winner_id = max(score, key=score.get)
@@ -246,7 +269,12 @@ async def battle_score(ssn: AsyncSession, battle_id: int) -> dict[int, int]:
     turns = (await ssn.scalars(query)).all()
     red_player_turns = turns[::2]
     blue_player_turns = turns[1::2]
-    result = {}
+    red_player_id = red_player_turns[0].player_id
+    blue_player_id = blue_player_turns[0].player_id
+    result = {
+        red_player_id: 0,
+        blue_player_id: 0,
+    }
     for turn1, turn2 in zip(red_player_turns, blue_player_turns, strict=True):
         turn_winner = await get_result_turns(ssn, turn1, turn2)
         if turn_winner:
@@ -304,3 +332,8 @@ async def update_ratings_after_battle(ssn: AsyncSession, battle_id: int) -> None
         )
         await ssn.execute(query)
         await ssn.commit()
+
+
+async def get_battle(ssn: AsyncSession, battle_id: int) -> CardBattle:
+    query = select(CardBattle).filter(CardBattle.id == battle_id)
+    return await ssn.scalar(query)

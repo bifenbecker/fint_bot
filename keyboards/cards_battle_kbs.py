@@ -113,3 +113,11 @@ def get_choose_type_of_turn_kb(battle_id: int, red_player_id: int, blue_player_i
             ],
         ]
     )
+
+
+finish_cards_battle_kb = InlineKeyboardMarkup(
+    inline_keyboard=[
+        [InlineKeyboardButton(text="⚽️ Сыграть еще", callback_data="cardsbattle")],
+        [InlineKeyboardButton(text="🕹️ В главное меню", callback_data="startplay")],
+    ]
+)
