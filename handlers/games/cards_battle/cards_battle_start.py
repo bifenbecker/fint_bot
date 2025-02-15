@@ -230,7 +230,7 @@ async def send_roll_result_messages(
     )
     await bot.send_message(
         chat_id=red_player_id,
-        text="🔸Соперник найден.\nВы ходите первым, ваш цвет красный 🟥",
+        text="🔸<b>Соперник найден.</b>\nВы ходите первым, ваш цвет <b>красный</b> 🟥",
         reply_markup=get_choose_type_of_turn_kb(
             battle_id=battle.id,
             red_player_id=red_player_id,
@@ -239,7 +239,7 @@ async def send_roll_result_messages(
     )
     await bot.send_message(
         chat_id=blue_player_id,
-        text="🔸Соперник найден.\nВы ходите вторым, ваш цвет синий 🟦",
+        text="🔸<b>Соперник найден.</b>\nВы ходите вторым, ваш цвет <b>синий</b> 🟦",
     )
 
 

@@ -183,20 +183,20 @@ async def send_cards_battle_results(
     red_player_score = score.get(battle.player_red_id, 0)
     blue_player_score = score.get(battle.player_blue_id, 0)
     txt = """
-    🏵️Игра окончена
-    ⚽️Счет: {red_player_score} - {blue_player_score}
-    ✅{battle_result}
+🏵️<b>Игра окончена</b>
+⚽️<b>Счет: {red_player_score} - {blue_player_score}</b>
+✅{battle_result}
 
-    🟦Синий: {blue_player_username}
-    🟥Красный: {red_player_username}
+🟦<i>Синий: {blue_player_username}</i>
+🟥<i>Красный: {red_player_username}</i>
 
-    🏆Твой рейтинг: {player_rating}
-    📊Твой дивизион: {player_division}
+🏆<b>Твой рейтинг: {player_rating}</b>
+📊<b>Твой дивизион: {player_division}</b>
     """
-    battle_result = "Ничья!"
+    battle_result = "<b>Ничья!</b>"
     if red_player_score != blue_player_score:
         winner = await get_battle_result(ssn, battle_id)
-        battle_result = f"Победил: {winner.username}"
+        battle_result = f"<b>Победил: {winner.username}</b>"
 
     await bot.send_message(
         text=txt.format(
@@ -236,22 +236,22 @@ def get_media_group_for_player(
         card = turn.card.user_card.card
 
         return f"""
-👤 {card.name} ({card.card_name})
+👤 <b>{card.name}</b> ({card.card_name})
 🗡️ Атака: {card.attack_rate} {("✅" if is_win else "❌") if turn.type == CardBattleTurnType.ATTACK else ""}
 🛡️ Защита: {card.defense_rate} {("✅" if is_win else "❌") if turn.type == CardBattleTurnType.DEFENSE else ""}
-💎 Рейтинг: {card.general_rate} 
+💎 <b>Рейтинг: {card.general_rate}</b>
         """
 
-    winner_title_txt = "⚽️ ТЫ ЗАБИЛ ГОЛ"
-    looser_title_txt = "❌ ТЫ ПРОПУСТИЛ ГОЛ"
+    winner_title_txt = "⚽️ <b>ТЫ ЗАБИЛ ГОЛ</b>"
+    looser_title_txt = "❌ <b>ТЫ ПРОПУСТИЛ ГОЛ</b>"
 
     txt = """
 {title}
 
-🟥Игрок красного: 
+🟥<b>Игрок красного:</b> 
 {red_player_card_text}
 
-🟦Игрок синего:
+🟦<b>Игрок синего:</b>
 {blue_player_card_text}
     """
 
