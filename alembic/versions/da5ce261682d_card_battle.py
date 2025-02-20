@@ -2,7 +2,7 @@
 
 Revision ID: da5ce261682d
 Revises: 20d3f0fbd778
-Create Date: 2025-02-12 15:42:19.142103
+Ceate Date: 2025-02-12 15:42:19.142103
 
 """
 from typing import Sequence, Union
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'da5ce261682d'
-down_revision: Union[str, None] = '20d3f0fbd778'
+down_revision: Union[str, None] = '56aae93eb433'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
