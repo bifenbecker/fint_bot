@@ -1,4 +1,3 @@
-# type: ignore
 import logging
 from typing import Sequence
 
@@ -248,7 +247,7 @@ def get_media_group_for_player(
     txt = """
 {title}
 
-🟥<b>Игрок красного:</b> 
+🟥<b>Игрок красного:</b>
 {red_player_card_text}
 
 🟦<b>Игрок синего:</b>

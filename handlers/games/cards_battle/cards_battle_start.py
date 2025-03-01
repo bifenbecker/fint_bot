@@ -42,7 +42,7 @@ router.callback_query.middleware(ActionMiddleware())
 async def create_cards_battle_cmd(c: CQ, action_queue, ssn, state: FSM):
     txt = """
     ⚖️ Битва составов
-    
+
     Собери составы и сыграй в битву.
     """
     rarity = "all"
@@ -71,6 +71,42 @@ async def create_cards_battle_cmd(c: CQ, action_queue, ssn, state: FSM):
             txt,
             reply_markup=select_cards_for_cards_battle_kb(
                 page, last, "nosort", card_id=first_card.id
+            ),
+        )
+    try:
+        del action_queue[str(c.from_user.id)]
+    except Exception as error:
+        logging.info(f"Action delete error\n{error}")
+
+
+@router.callback_query(F.data.startswith("cards_battle_sortmycards_"), flags=flags)
+async def view_sorted_cards_cmd(c: CQ, ssn, state: FSM, action_queue):
+    c_data = c.data.split("_")[-1]
+    if c_data == "nosort":
+        sorting = "down"
+    elif c_data == "down":
+        sorting = "up"
+    else:
+        sorting = "nosort"
+
+    data = await state.get_data()
+    cards: Sequence[UserCard] = data.get("cards", [])
+    if len(cards) == 0:
+        await c.answer("ℹ️ У тебя еще нет карт")
+        await c.message.delete()
+    else:
+        page = 1
+        last = len(cards)
+        await state.update_data(sorting=sorting)
+        await c.message.delete()
+
+        txt = await format_view_cards_battle_text(cards[0].card)
+        first_card: UserCard = cards[page - 1]
+        await c.message.answer_photo(
+            cards[0].card.image,
+            txt,
+            reply_markup=select_cards_for_cards_battle_kb(
+                page, last, sorting, card_id=first_card.id
             ),
         )
     try:
@@ -258,7 +294,7 @@ async def search_cards_battle_cmd(
 ):
     await c.answer("🔎 Поиск соперника")
     await c.message.delete()
-    await c.message.answer(
+    message = await c.message.answer(
         "🔎 Идет поиск...",
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=[[cancel_cards_battle_btn]]
@@ -267,13 +303,13 @@ async def search_cards_battle_cmd(
     searching_players = await get_searching_players(ssn, c.from_user.id)
     if len(searching_players) > 0:
         second_player: Player = random.choice(searching_players)
+        await message.delete()
         red_player_id, blue_player_id = await roll_cards_battle(
             ssn, bot, c.from_user.id, second_player
         )
         await send_roll_result_messages(bot, ssn, red_player_id, blue_player_id, state)
     else:
         await player_start_search_card_battle(ssn=ssn, player_id=c.from_user.id)
-        await state.set_state(CardsBattleStates.playing_cards_battle)
     try:
         del action_queue[str(c.from_user.id)]
     except Exception as error:

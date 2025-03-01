@@ -30,7 +30,7 @@ def select_cards_for_cards_battle_kb(page, last, sorting, card_id: int):
     )
 
     btns.append(
-        [InlineKeyboardButton(text=txt, callback_data=f"sortmycards_{sorting}")]
+        [InlineKeyboardButton(text=txt, callback_data=f"cards_battle_sortmycards_{sorting}")]
     )
 
     btns.append(
@@ -65,9 +65,6 @@ def select_cards_for_cards_battle_kb(page, last, sorting, card_id: int):
 
     btns.append(page_btns)
 
-    btns.append(
-        [InlineKeyboardButton(text="🧑💻 В личный кабинет", callback_data="startplay")]
-    )
     keyboard = InlineKeyboardMarkup(inline_keyboard=btns)
     return keyboard
 
@@ -77,7 +74,6 @@ search_cards_battle_kb = InlineKeyboardMarkup(
         [
             InlineKeyboardButton(text="Искать игру", callback_data="searchcardsbattle"),
         ],
-        [InlineKeyboardButton(text="🧑💻 В личный кабинет", callback_data="startplay")],
     ]
 )
 

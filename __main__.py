@@ -24,7 +24,7 @@ from handlers.games import (
     penalty_card_owner,
     penalty_card_target,
 )
-from handlers.games.cards_battle import cards_battle_start, cards_battle_game
+from handlers.games.cards_battle import cards_battle_game, cards_battle_start
 from handlers.games.packs_battle import (
     pack_battle_create,
     pack_battle_main,

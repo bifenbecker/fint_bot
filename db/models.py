@@ -63,7 +63,7 @@ class Player(Base):
 
     trade_count = Column(BigInteger, default=0)
 
-    card_battle_rating = Column(Integer, default=0)
+    card_battle_rating = Column(Integer, default=0, server_default='0', nullable=False)
     card_battle_status = Column(
         Enum(CardBattlePlayerStatus), default=CardBattlePlayerStatus.READY
     )

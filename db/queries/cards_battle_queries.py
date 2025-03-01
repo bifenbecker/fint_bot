@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from typing import Sequence
 
-from sqlalchemy import and_, insert, select, update
+from sqlalchemy import and_, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
+from sqlalchemy.orm import joinedload, selectinload
 
 from db.models import CardBattle, CardBattleTurn, Player, UserCard, UserCardsToBattle
 from enum_types import CardBattleGameStatus, CardBattlePlayerStatus, CardBattleTurnType
@@ -337,3 +337,45 @@ async def update_ratings_after_battle(ssn: AsyncSession, battle_id: int) -> None
 async def get_battle(ssn: AsyncSession, battle_id: int) -> CardBattle:
     query = select(CardBattle).filter(CardBattle.id == battle_id)
     return await ssn.scalar(query)
+
+
+async def cancel_card_battle_game(ssn: AsyncSession, player_id: int) -> int | None:
+    query = select(Player.card_battle_status).filter(Player.id == player_id)
+    status = await ssn.scalar(query)
+
+    if status == CardBattlePlayerStatus.PLAYING:
+        await change_player_card_battle_status(
+            ssn, player_id, CardBattlePlayerStatus.READY
+        )
+        query = (
+            select(CardBattle)
+            .options(
+                joinedload(CardBattle.player_red), joinedload(CardBattle.player_blue)
+            )
+            .filter(
+                and_(
+                    or_(
+                        CardBattle.player_red_id == player_id,
+                        CardBattle.player_blue_id == player_id,
+                    ),
+                    CardBattle.winner_id.is_(None),
+                    CardBattle.status != CardBattleGameStatus.FINISHED,
+                )
+            )
+            .order_by(CardBattle.id.desc())
+        )
+        battle = await ssn.scalar(query)
+        if battle:
+            battle.winner_id = (
+                battle.player_red_id
+                if player_id == battle.player_blue_id
+                else battle.player_blue_id
+            )
+            await change_player_card_battle_status(
+                ssn, battle.winner_id, CardBattlePlayerStatus.READY
+            )
+            battle.status = CardBattleGameStatus.FINISHED
+            await ssn.commit()
+            await ssn.refresh(battle)
+            await update_ratings_after_battle(ssn, battle.id)
+            return battle.winner_id
