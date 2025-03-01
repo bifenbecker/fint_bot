@@ -193,6 +193,7 @@ async def main():
             action_queue=action_queue,
             online=online,
             banned=banned,
+            mem_cache={},
         )
     finally:
         await dp.storage.close()

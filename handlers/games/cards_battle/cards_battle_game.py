@@ -98,6 +98,7 @@ async def select_card_for_turn(
     await state.update_data(
         battle_id=battle_id, blue_player_id=blue_player_id, red_player_id=red_player_id
     )
+
     await bot.send_message(
         chat_id=blue_player_id,
         text=f"ИГРОК {'АТАКУЕТ' if callback_data.type == CardBattleTurnType.ATTACK.value else 'ЗАЩИЩАЕТСЯ'}, ТЫ {'ЗАЩИЩАЕШЬСЯ' if callback_data.type == CardBattleTurnType.ATTACK.value else 'АТАКУЕШЬ'}\nГотов?",

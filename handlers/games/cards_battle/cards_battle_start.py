@@ -8,7 +8,7 @@ from aiogram import Bot, F, Router, types
 from aiogram.filters import StateFilter
 from aiogram.fsm.context import FSMContext as FSM
 from aiogram.types import CallbackQuery as CQ
-from aiogram.types import dice
+from aiogram.types import Message, dice
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from db.models import Player, UserCard
@@ -291,10 +291,11 @@ async def search_cards_battle_cmd(
     ssn: AsyncSession,
     db: async_sessionmaker[AsyncSession],
     state: FSM,
+    mem_cache: dict,
 ):
     await c.answer("🔎 Поиск соперника")
     await c.message.delete()
-    message = await c.message.answer(
+    message: Message = await c.message.answer(
         "🔎 Идет поиск...",
         reply_markup=types.InlineKeyboardMarkup(
             inline_keyboard=[[cancel_cards_battle_btn]]
@@ -307,8 +308,13 @@ async def search_cards_battle_cmd(
         red_player_id, blue_player_id = await roll_cards_battle(
             ssn, bot, c.from_user.id, second_player
         )
+        msg_id = mem_cache.get(second_player.id, None)
+        if msg_id:
+            await bot.delete_message(chat_id=second_player.id, message_id=msg_id)
         await send_roll_result_messages(bot, ssn, red_player_id, blue_player_id, state)
     else:
+        mem_cache.update({c.from_user.id: message.message_id})
+        await state.set_state(CardsBattleStates.playing_cards_battle)
         await player_start_search_card_battle(ssn=ssn, player_id=c.from_user.id)
     try:
         del action_queue[str(c.from_user.id)]
