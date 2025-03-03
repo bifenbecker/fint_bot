@@ -1,5 +1,5 @@
 import logging
-from typing import Sequence
+from typing import Sequence, cast
 
 from aiogram import Bot, F, Router
 from aiogram.filters import StateFilter
@@ -9,14 +9,14 @@ from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup, InputMedia
 from aiogram.utils.media_group import MediaGroupBuilder
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from db.models import CardBattleTurn, UserCard, UserCardsToBattle
+from db.models import CardBattleTurn, Player, UserCard, UserCardsToBattle
 from db.queries.cards_battle_queries import (
     LastTurnResult,
     add_turn,
     battle_score,
     finish_players_cards_battle,
     get_battle,
-    get_battle_result,
+    get_battle_winner,
     get_last_turn_result,
     get_remaining_cards,
     opposite_player_has_turn,
@@ -195,7 +195,7 @@ async def send_cards_battle_results(
     """
     battle_result = "<b>Ничья!</b>"
     if red_player_score != blue_player_score:
-        winner = await get_battle_result(ssn, battle_id)
+        winner = cast(Player, await get_battle_winner(ssn, battle_id))
         battle_result = f"<b>Победил: {winner.username}</b>"
 
     await bot.send_message(

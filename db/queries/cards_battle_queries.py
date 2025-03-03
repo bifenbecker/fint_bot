@@ -246,11 +246,12 @@ async def get_last_turn_result(ssn: AsyncSession, battle_id: int) -> LastTurnRes
     )
 
 
-async def get_battle_result(ssn: AsyncSession, battle_id: int) -> Player:
+async def get_battle_winner(ssn: AsyncSession, battle_id: int) -> Player | None:
     score = await battle_score(ssn, battle_id)
     winner_id = max(score, key=score.get)
     if len(set(score.values())) == 1:
         winner_id = None
+        return None
     query = (
         update(CardBattle)
         .filter(CardBattle.id == battle_id)
@@ -297,6 +298,10 @@ async def finish_players_cards_battle(ssn: AsyncSession, battle_id: int) -> None
     await change_player_card_battle_status(
         ssn, battle.player_red_id, CardBattlePlayerStatus.READY
     )
+    winner = await get_battle_winner(ssn, battle_id)
+    battle.winner = winner
+    await ssn.commit()
+    await ssn.refresh(battle)
 
 
 async def update_ratings_after_battle(ssn: AsyncSession, battle_id: int) -> None:

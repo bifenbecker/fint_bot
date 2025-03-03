@@ -192,7 +192,7 @@ async def save_selected_cards(
     add_counter = Counter([selected_card.card.position])
     check = counter + add_counter
 
-    if check.total() == 5:
+    if check.total() == 1:
         await c.answer("✅ Карта выбрана")
         selected.add(selected_card)
         await state.update_data(selected=selected)
