@@ -1,13 +1,16 @@
 import bisect
+from datetime import datetime
 
 from sqlalchemy import (
     BigInteger,
     Column,
+    DateTime,
     Enum,
     ForeignKey,
     Integer,
     String,
     Text,
+    func,
 )
 from sqlalchemy.ext.hybrid import hybrid_property
 from sqlalchemy.orm import relationship
@@ -63,7 +66,7 @@ class Player(Base):
 
     trade_count = Column(BigInteger, default=0)
 
-    card_battle_rating = Column(Integer, default=0, server_default='0', nullable=False)
+    card_battle_rating = Column(Integer, default=0, server_default="0", nullable=False)
     card_battle_status = Column(
         Enum(CardBattlePlayerStatus), default=CardBattlePlayerStatus.READY
     )
@@ -332,6 +335,7 @@ class CardBattle(Base):
     player_blue_id = Column(ForeignKey("player.id"), nullable=False)
     player_red_id = Column(ForeignKey("player.id"), nullable=False)
     winner_id = Column(ForeignKey("player.id"), nullable=True, default=None)
+    date_play = Column(DateTime, server_default=func.now(), default=datetime.now)
 
     player_blue = relationship(
         "Player",

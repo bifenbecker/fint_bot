@@ -1,7 +1,8 @@
 from dataclasses import dataclass
+from datetime import datetime, timedelta
 from typing import Sequence
 
-from sqlalchemy import and_, insert, or_, select, update
+from sqlalchemy import DateTime, and_, cast, insert, or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import joinedload, selectinload
 
@@ -68,6 +69,7 @@ async def create_card_battle(
     )
     res = await ssn.scalar(query)
     await ssn.commit()
+    await ssn.refresh(res)
     return res
 
 
@@ -84,7 +86,30 @@ async def get_searching_players(ssn: AsyncSession, player_id: int) -> Sequence[P
         )
     )
     res = await ssn.scalars(query)
-    return res.all()
+    players = res.all()
+    result = []
+    for player in players:
+        query = select(CardBattle).filter(
+            or_(
+                CardBattle.player_blue_id == player.id,
+                CardBattle.player_red_id == player.id,
+            ),
+            or_(
+                CardBattle.player_blue_id == search_player.id,
+                CardBattle.player_red_id == search_player.id,
+            ),
+            cast(CardBattle.date_play, DateTime)
+            >= (datetime.now() - timedelta(days=1)),
+        )
+        try:
+            res = await ssn.scalars(query)
+        except Exception as e:
+            print(e)
+        battles = res.all()
+        if len(battles) < 5:
+            result.append(player)
+
+    return result
 
 
 async def get_player_cards(
@@ -300,6 +325,7 @@ async def finish_players_cards_battle(ssn: AsyncSession, battle_id: int) -> None
     )
     winner = await get_battle_winner(ssn, battle_id)
     battle.winner = winner
+    battle.date_play = datetime.now()
     await ssn.commit()
     await ssn.refresh(battle)
 
@@ -380,6 +406,7 @@ async def cancel_card_battle_game(ssn: AsyncSession, player_id: int) -> int | No
                 ssn, battle.winner_id, CardBattlePlayerStatus.READY
             )
             battle.status = CardBattleGameStatus.FINISHED
+            battle.date_play = datetime.now()
             await ssn.commit()
             await ssn.refresh(battle)
             await update_ratings_after_battle(ssn, battle.id)
